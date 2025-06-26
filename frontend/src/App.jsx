@@ -1,6 +1,6 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify'
 
 // Import all your page components
 import Home from './pages/Home'
@@ -15,26 +15,28 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 
 const App = () => {
-  
   return (
-    
-    <div className="mx-4 sm:mx-[10%]">
-      <ToastContainer/>
+    <>
+      {/* Global Toast and Fixed Navbar */}
+      <ToastContainer />
       <Navbar />
-      <Routes>
-        
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/doctors" element={<Doctors />} />
-        <Route path="/doctors/:speciality" element={<Doctors />} />
-        <Route path="/my-profile" element={<MyProfile />} />
-        <Route path="/my-appointment" element={<MyAppointment />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/appointment/:docId" element={<Appointment />} />
-      </Routes>
-      <Footer/>
-    </div>
+
+      {/* Main Page Content with Padding for Fixed Navbar */}
+      <div className="pt-24 px-4 sm:px-[10%]">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/doctors" element={<Doctors />} />
+          <Route path="/doctors/:speciality" element={<Doctors />} />
+          <Route path="/my-profile" element={<MyProfile />} />
+          <Route path="/my-appointment" element={<MyAppointment />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/appointment/:docId" element={<Appointment />} />
+        </Routes>
+        <Footer />
+      </div>
+    </>
   )
 }
 

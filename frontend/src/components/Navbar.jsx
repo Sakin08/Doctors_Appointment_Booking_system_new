@@ -1,54 +1,83 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
-import { assets } from "../assets/assets";
 import { NavLink, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
-
+import { motion } from "framer-motion";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [showMenu, setShowMenu] = useState(false); // Mobile menu
+  const [showMenu, setShowMenu] = useState(false);
   const { token, userData, setToken } = useContext(AppContext);
-  const [dropdownOpen, setDropdownOpen] = useState(false); // Profile dropdown
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Close dropdown when clicked outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
       }
     };
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   const handleLogout = () => {
-    // Remove token from localStorage and update state
     setToken(false);
     setDropdownOpen(false);
     navigate("/");
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <nav className="bg-white shadow-md px-6 py-4">
+    <motion.nav
+      initial={{ y: -60, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className={`fixed top-0 left-0 w-full z-50 px-4 sm:px-6 transition-all duration-300 ${
+        scrolled ? "bg-white/80 shadow-md py-2 backdrop-blur-md" : "bg-white py-4"
+      }`}
+    >
       <div className="flex items-center justify-between">
         {/* Logo */}
-        <div
-          onClick={() => navigate('/')}
-          className="flex items-center space-x-2 cursor-pointer hover:opacity-80 hover:scale-105 transform transition duration-300"
+        <motion.div
+          onClick={() => {
+            navigate("/");
+            scrollToTop();
+          }}
+          className="cursor-pointer select-none"
+          whileHover={{ scale: 1.1 }}
+          transition={{ type: "spring", stiffness: 300 }}
         >
-          <img src={assets.logo} alt="Logo" className="h-10 w-auto" />
-          <span className="text-xl font-bold text-blue-600">MediCare</span>
-        </div>
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"
+          >
+            Medi<span className="tracking-wide">Care</span>
+          </motion.span>
+        </motion.div>
 
         {/* Desktop Menu */}
-        <ul className="hidden sm:flex space-x-6 items-center">
+        <ul className="hidden lg:flex space-x-6 items-center">
           {["/", "/doctors", "/about", "/contact"].map((path, idx) => (
             <NavLink
               key={idx}
               to={path}
+              onClick={scrollToTop}
               className={({ isActive }) =>
-                `text-md font-medium hover:text-blue-600 transition duration-300 ${isActive ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700"
+                `relative text-md font-medium transition duration-300 hover:text-blue-600 before:absolute before:bottom-0 before:left-0 before:h-0.5 before:bg-blue-600 before:w-0 hover:before:w-full before:transition-all ${
+                  isActive ? "text-blue-600 before:w-full" : "text-gray-700"
                 }`
               }
             >
@@ -57,15 +86,19 @@ const Navbar = () => {
           ))}
         </ul>
 
-        {/* Right-side buttons */}
-        <div className="hidden sm:block relative" ref={dropdownRef}>
+        {/* Desktop Profile/Login */}
+        <div className="hidden lg:block relative" ref={dropdownRef}>
           {!token ? (
-            <button
-              onClick={() => navigate("/login")}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              onClick={() => {
+                navigate("/login");
+                scrollToTop();
+              }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-300"
             >
               Create Account
-            </button>
+            </motion.button>
           ) : (
             <div>
               <img
@@ -75,58 +108,51 @@ const Navbar = () => {
                 className="w-10 h-10 rounded-full cursor-pointer border border-gray-300"
               />
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10">
-                  <button
-                    onClick={() => {
-                      navigate("/my-profile");
-                      setDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  >
-                    My Profile
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/my-appointment");
-                      setDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  >
-                    My Appointment
-                  </button>
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-20"
+                >
+                  <button onClick={() => { navigate("/my-profile"); setDropdownOpen(false); scrollToTop(); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">My Profile</button>
+                  <button onClick={() => { navigate("/my-appointment"); setDropdownOpen(false); scrollToTop(); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">My Appointment</button>
                   <hr className="my-1" />
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100 cursor-pointer"
-                  >
-                    Logout
-                  </button>
-                </div>
+                  <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100">Logout</button>
+                </motion.div>
               )}
             </div>
           )}
         </div>
 
-        {/* Mobile menu toggle */}
-        <button className="sm:hidden" onClick={() => setShowMenu(!showMenu)}>
+        {/* Mobile Toggle */}
+        <button className="lg:hidden focus:outline-none" onClick={() => setShowMenu(!showMenu)}>
           <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            {showMenu ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
           </svg>
         </button>
       </div>
 
       {/* Mobile Menu */}
       {showMenu && (
-        <div className="sm:hidden mt-4 space-y-3">
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          className="lg:hidden mt-4 flex flex-col space-y-3 overflow-hidden"
+        >
           {["/", "/doctors", "/about", "/contact"].map((path, idx) => (
             <NavLink
               key={idx}
               to={path}
+              onClick={() => {
+                scrollToTop();
+                setShowMenu(false);
+              }}
               className={({ isActive }) =>
-                `block text-md font-medium hover:text-blue-600 transition duration-300 ${isActive ? "text-blue-600" : "text-gray-700"
-                }`
+                `block text-md font-medium hover:text-blue-600 transition duration-300 ${isActive ? "text-blue-600" : "text-gray-700"} px-2`
               }
-              onClick={() => setShowMenu(false)} // close menu after click
             >
               {path === "/" ? "Home" : path === "/doctors" ? "All Doctors" : path === "/about" ? "About" : "Contact"}
             </NavLink>
@@ -135,43 +161,23 @@ const Navbar = () => {
             <button
               onClick={() => {
                 setShowMenu(false);
+                scrollToTop();
                 navigate("/login");
               }}
-              className="block w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-300"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-300"
             >
               Create Account
             </button>
           ) : (
             <div className="space-y-2">
-              <button
-                onClick={() => {
-                  navigate("/profile");
-                  setShowMenu(false);
-                }}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                My Profile
-              </button>
-              <button
-                onClick={() => {
-                  navigate("/appointments");
-                  setShowMenu(false);
-                }}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                My Appointment
-              </button>
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100"
-              >
-                Logout
-              </button>
+              <button onClick={() => { navigate("/my-profile"); setShowMenu(false); scrollToTop(); }} className="block w-full text-left px-4 py-2 hover:bg-gray-100">My Profile</button>
+              <button onClick={() => { navigate("/my-appointment"); setShowMenu(false); scrollToTop(); }} className="block w-full text-left px-4 py-2 hover:bg-gray-100">My Appointment</button>
+              <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100">Logout</button>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
-    </nav>
+    </motion.nav>
   );
 };
 

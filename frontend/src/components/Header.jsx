@@ -1,9 +1,59 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { assets } from '../assets/assets';
 
-const Header = () => {
+const AnimatedText = ({ text, className }) => {
+  const words = text.split(" ");
+  return (
+    <div className={`flex flex-wrap justify-center md:justify-start gap-2 ${className}`}>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.15, type: "spring", stiffness: 150 }}
+          whileHover={{
+            scale: 1.1,
+            color: "#0ea5e9",
+            textShadow: "0 0 8px rgba(14, 165, 233, 0.7)"
+          }}
+          className="inline-block font-extrabold"
+        >
+          {word}
+        </motion.span>
+      ))}
+    </div>
+  );
+};
 
-  // Smooth scroll handler for Book Appointment button
+const sliderImages = [
+  "https://i.postimg.cc/h4kVkkT2/male-working-as-paediatrician.jpg",
+  "https://i.postimg.cc/mr5XxdbB/man-working-as-paediatrician.jpg",
+  "https://i.postimg.cc/hjFDrRXd/expressive-young-woman-posing-studio.jpg"
+];
+
+const Header = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [manualSlide, setManualSlide] = useState(false);
+
+  useEffect(() => {
+    if (manualSlide) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % sliderImages.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [manualSlide]);
+
+  const goToPrev = () => {
+    setManualSlide(true);
+    setCurrentIndex((prev) => (prev - 1 + sliderImages.length) % sliderImages.length);
+  };
+
+  const goToNext = () => {
+    setManualSlide(true);
+    setCurrentIndex((prev) => (prev + 1) % sliderImages.length);
+  };
+
   const handleScroll = (e) => {
     e.preventDefault();
     const specialitySection = document.getElementById('speciality');
@@ -13,40 +63,84 @@ const Header = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-white via-blue-50 to-blue-100 px-6 md:px-16 flex flex-col-reverse md:flex-row items-center justify-center gap-12 font-sans">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="min-h-screen w-full bg-gradient-to-br from-cyan-50 via-white to-blue-100 px-4 sm:px-8 md:px-16 lg:px-24 flex flex-col-reverse md:flex-row items-center justify-center gap-10 md:gap-16"
+    >
       {/* Left Side */}
-      <div className="md:w-1/2 space-y-5 text-center md:text-left">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 leading-snug">
-          Book Appointment <br />
-          with <span className="text-blue-600">Trusted Doctors</span>
+      <div className="md:w-1/2 w-full text-center md:text-left space-y-6">
+        <h1 className="leading-tight">
+          <AnimatedText text="Book Appointment of Our" className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gray-800" />
+          <motion.span
+            className="block mt-2 text-4xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent drop-shadow-lg"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, type: "spring", stiffness: 140 }}
+            whileHover={{
+              scale: 1.1,
+              textShadow: "0 0 12px rgba(14, 165, 233, 0.7)",
+              transition: { duration: 0.4, ease: "easeOut" }
+            }}
+          >
+            Trusted Doctors
+          </motion.span>
         </h1>
 
-        <div className="flex items-center justify-center md:justify-start gap-4">
-          <img src={assets.group_profiles} alt="Group Profiles" className="w-12 h-12 rounded-full shadow-md" />
-          <p className="text-gray-600 text-base md:text-lg leading-relaxed">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-center sm:justify-start gap-4 sm:gap-6">
+          <img
+            src={assets.group_profiles}
+            alt="Group Profiles"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-md ring-2 ring-sky-400"
+          />
+          <p className="text-gray-700 text-base sm:text-lg md:text-xl max-w-md leading-relaxed font-medium">
             Explore our list of verified doctors and schedule your appointments with ease.
           </p>
         </div>
 
-        <button
+        <motion.button
           onClick={handleScroll}
-          className="inline-flex items-center gap-3 bg-blue-600 text-white px-5 py-2.5 rounded-full shadow-lg 
-                     hover:bg-blue-700 hover:shadow-xl hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer w-fit mx-auto md:mx-0 text-base font-medium"
+          whileHover={{ scale: 1.07 }}
+          whileTap={{ scale: 0.95 }}
+          className="inline-flex items-center gap-4 bg-sky-500 text-white px-5 sm:px-7 py-2.5 sm:py-3 rounded-full shadow-lg font-semibold text-base sm:text-lg tracking-wide hover:bg-sky-600 transition-all duration-300 ease-in-out mx-auto md:mx-0 focus:outline-none focus:ring-4 focus:ring-sky-300"
         >
-          Book Appointment
-          <img src={assets.arrow_icon} alt="Arrow" className="w-4 h-4" />
-        </button>
+          Book Appointment 
+          <img src={assets.arrow_icon} alt="Arrow" className="w-4 sm:w-5 h-4 sm:h-5" />
+        </motion.button>
       </div>
 
-      {/* Right Side */}
-      <div className="md:w-1/2 flex justify-center">
-        <img
-          src={assets.header_img}
-          alt="Header Illustration"
-          className="w-[80%] max-w-md rounded-xl shadow-lg"
-        />
+      {/* Right Side - Image Slider */}
+      <div className="md:w-1/2 w-full flex justify-center">
+        <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg h-[360px] sm:h-[400px] md:h-[420px] rounded-xl overflow-hidden group shadow-xl border border-sky-300 bg-white">
+          {/* Navigation Zones */}
+          <div className="absolute left-0 top-0 w-1/2 h-full z-10 cursor-pointer" onClick={goToPrev} />
+          <div className="absolute right-0 top-0 w-1/2 h-full z-10 cursor-pointer" onClick={goToNext} />
+
+          <AnimatePresence initial={false}>
+            <motion.img
+              key={currentIndex}
+              src={sliderImages[currentIndex]}
+              alt={`Slide ${currentIndex + 1}`}
+              className="absolute w-full h-full object-cover rounded-2xl border-4 border-transparent group-hover:border-indigo-500"
+              initial={{ x: 300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -300, opacity: 0 }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+              draggable={false}
+              loading="lazy"
+              whileHover={{
+                scale: 1.05,
+                rotate: 1,
+                boxShadow: "0 10px 25px rgba(59, 130, 246, 0.5)",
+                borderColor: "#6366f1",
+                transition: { type: "spring", stiffness: 200 },
+              }}
+            />
+          </AnimatePresence>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
