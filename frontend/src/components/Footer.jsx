@@ -1,65 +1,93 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { assets } from '../assets/assets';
-
+import { motion } from 'framer-motion';
 
 const Footer = () => {
-  // Scroll to top on link click
   const scrollToTop = () => {
     window.scrollTo({ top: 0 });
   };
 
-
   return (
-    <footer className="bg-gray-100 text-gray-700 px-6 md:px-20 py-10 font-sans">
-      <div className="max-w-7xl mx-auto flex flex-wrap md:flex-nowrap gap-10">
+    <footer className="bg-gray-100 text-gray-700 px-6 md:px-20 py-12 font-sans mt-12">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-12 md:gap-16">
         {/* Left Section */}
-        <div className="md:w-1/3 space-y-4">
-          <img src={assets.logo} alt="Logo" className="h-12" />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="md:w-1/3 space-y-4"
+        >
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-wide bg-gradient-to-r from-blue-700 via-purple-600 to-green-500 text-transparent bg-clip-text">
+  Medicare
+</h2>
+
           <p className="text-gray-600 text-sm leading-relaxed">
-            Prescripto Medicare is a Bangladesh-based digital healthcare platform that connects patients with licensed doctors.  </p>
-        </div>
+            <strong>Medicare</strong> is a Bangladesh-based digital healthcare platform that connects patients with licensed doctors.
+          </p>
+        </motion.div>
 
         {/* Middle Section */}
-        <div className="md:w-1/3 space-y-4">
-          <h3 className="text-lg font-semibold text-blue-700">COMPANY</h3>
-          <ul className="space-y-2 text-gray-700 text-sm">
-            <li>
-              <Link to="/" onClick={scrollToTop} className="hover:text-blue-600 transition">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/about" onClick={scrollToTop} className="hover:text-blue-600 transition">
-                About us
-              </Link>
-            </li>
-            <li>
-              <Link to="/contact" onClick={scrollToTop} className="hover:text-blue-600 transition">
-                Contact us
-              </Link>
-            </li>
-            <li>
-              <Link to="/privacy-policy" onClick={scrollToTop} className="hover:text-blue-600 transition">
-                Privacy policy
-              </Link>
-            </li>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="md:w-1/3 space-y-4"
+        >
+          <h3 className="text-lg font-semibold text-blue-700">Company</h3>
+          <ul className="space-y-2 text-sm">
+            {[
+              { label: 'Home', path: '/' },
+              { label: 'About us', path: '/about' },
+              { label: 'Contact us', path: '/contact' },
+              { label: 'Privacy policy', path: '/privacy-policy' },
+            ].map((link, index) => (
+              <li key={index}>
+                <Link
+                  to={link.path}
+                  onClick={scrollToTop}
+                  className="hover:text-blue-600 transition-colors duration-300"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
           </ul>
-        </div>
+        </motion.div>
 
         {/* Right Section */}
-        <div className="md:w-1/3 space-y-4">
-          <h3 className="text-lg font-semibold text-blue-700">GET IN TOUCH</h3>
-          <ul className="space-y-3 text-blue-700 text-sm break-words">
-            <li>📞 +880 1823-024067</li>
-            <li>✉️ 2021331008@student.sust.edu</li>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="md:w-1/3 space-y-4"
+        >
+          <h3 className="text-lg font-semibold text-blue-700">Get in Touch</h3>
+          <ul className="space-y-2 text-sm text-blue-700">
+            <li>
+              <a href="tel:+8801823024067" className="hover:text-blue-800 transition-colors duration-300">
+                📞 +880 1823-024067
+              </a>
+            </li>
+            <li>
+              <a
+                href="mailto:2021331008@student.sust.edu"
+                className="hover:text-blue-800 transition-colors duration-300 break-all"
+              >
+                ✉️ 2021331008@student.sust.edu
+              </a>
+            </li>
           </ul>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="mt-10 border-t border-gray-300 pt-4 text-center text-gray-500 text-xs select-none">
-        © 2025 Prescripto Medicare- All Rights Reserved.
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.6 }}
+        className="mt-10 border-t border-gray-300 pt-4 text-center text-gray-500 text-xs select-none"
+      >
+        © 2025 <span className="font-medium text-blue-600">Prescripto Medicare</span> — All Rights Reserved.
+      </motion.div>
     </footer>
   );
 };
