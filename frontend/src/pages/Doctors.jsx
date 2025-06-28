@@ -28,12 +28,26 @@ const Doctors = () => {
   };
 
   const specialities = [
-    'General physician',
+    'General Physician',
+    'Pediatrician',
     'Gynecologist',
     'Dermatologist',
-    'Pediatricians',
+    'ENT Specialist',
+    'Ophthalmologist',
+    'Dentist',
+    'Cardiologist',
     'Neurologist',
     'Gastroenterologist',
+    'Nephrologist',
+    'Endocrinologist',
+    'Pulmonologist',
+    'General Surgeon',
+    'Orthopedic Surgeon',
+    'Urologist',
+    'Psychiatrist',
+    'Oncologist',
+    'Rheumatologist',
+    'Infectious Disease Specialist'
   ];
 
   return (

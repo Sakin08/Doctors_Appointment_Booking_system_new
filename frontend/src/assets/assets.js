@@ -62,8 +62,12 @@ export const assets = {
 
 export const specialityData = [
     {
-        speciality: 'General physician',
+        speciality: 'General Physician',
         image: General_physician
+    },
+    {
+        speciality: 'Pediatrician',
+        image: Pediatricians
     },
     {
         speciality: 'Gynecologist',
@@ -74,8 +78,20 @@ export const specialityData = [
         image: Dermatologist
     },
     {
-        speciality: 'Pediatricians',
-        image: Pediatricians
+        speciality: 'ENT Specialist',
+        image: General_physician
+    },
+    {
+        speciality: 'Ophthalmologist',
+        image: General_physician
+    },
+    {
+        speciality: 'Dentist',
+        image: General_physician
+    },
+    {
+        speciality: 'Cardiologist',
+        image: General_physician
     },
     {
         speciality: 'Neurologist',
@@ -85,6 +101,46 @@ export const specialityData = [
         speciality: 'Gastroenterologist',
         image: Gastroenterologist
     },
+    {
+        speciality: 'Nephrologist',
+        image: General_physician
+    },
+    {
+        speciality: 'Endocrinologist',
+        image: General_physician
+    },
+    {
+        speciality: 'Pulmonologist',
+        image: General_physician
+    },
+    {
+        speciality: 'General Surgeon',
+        image: General_physician
+    },
+    {
+        speciality: 'Orthopedic Surgeon',
+        image: General_physician
+    },
+    {
+        speciality: 'Urologist',
+        image: General_physician
+    },
+    {
+        speciality: 'Psychiatrist',
+        image: General_physician
+    },
+    {
+        speciality: 'Oncologist',
+        image: General_physician
+    },
+    {
+        speciality: 'Rheumatologist',
+        image: General_physician
+    },
+    {
+        speciality: 'Infectious Disease Specialist',
+        image: General_physician
+    }
 ]
 
 export const doctors = [
