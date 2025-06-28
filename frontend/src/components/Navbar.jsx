@@ -115,6 +115,7 @@ const Navbar = () => {
                 >
                   <button onClick={() => { navigate("/my-profile"); setDropdownOpen(false); scrollToTop(); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">My Profile</button>
                   <button onClick={() => { navigate("/my-appointment"); setDropdownOpen(false); scrollToTop(); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">My Appointment</button>
+                  <button onClick={() => { navigate("/appointment-history"); setDropdownOpen(false); scrollToTop(); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Appointment History</button>
                   <hr className="my-1" />
                   <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100">Logout</button>
                 </motion.div>
@@ -172,6 +173,7 @@ const Navbar = () => {
             <div className="space-y-2">
               <button onClick={() => { navigate("/my-profile"); setShowMenu(false); scrollToTop(); }} className="block w-full text-left px-4 py-2 hover:bg-gray-100">My Profile</button>
               <button onClick={() => { navigate("/my-appointment"); setShowMenu(false); scrollToTop(); }} className="block w-full text-left px-4 py-2 hover:bg-gray-100">My Appointment</button>
+              <button onClick={() => { navigate("/appointment-history"); setShowMenu(false); scrollToTop(); }} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Appointment History</button>
               <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100">Logout</button>
             </div>
           )}

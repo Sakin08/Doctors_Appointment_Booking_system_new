@@ -11,6 +11,8 @@ import {
   FaSearch,
   FaSpinner,
   FaTrash,
+  FaCheck,
+  FaTimes,
 } from 'react-icons/fa';
 
 const DoctorAppointment = () => {
@@ -85,16 +87,39 @@ const DoctorAppointment = () => {
 
       if (newStatus === 'confirmed') {
         const { data } = await axios.put(
-          `${backendUrl}/api/doctor/complete-appointment`,
+          `${backendUrl}/api/doctor/confirm-appointment`,
           { appointmentId },
           { headers: { dtoken: dToken } }
         );
         
         if (data.success) {
           toast.success('Appointment confirmed successfully');
-          await fetchAppointments();
+          // Update the appointment status locally
+          setAppointments(prev => prev.map(apt => 
+            apt._id === appointmentId 
+              ? { ...apt, isConfirmed: true, status: 'confirmed' }
+              : apt
+          ));
         } else {
           toast.error(data.message || 'Failed to confirm appointment');
+        }
+      } else if (newStatus === 'completed') {
+        const { data } = await axios.put(
+          `${backendUrl}/api/doctor/complete-appointment`,
+          { appointmentId, patientVisited: true },
+          { headers: { dtoken: dToken } }
+        );
+
+        if (data.success) {
+          toast.success('Appointment marked as completed');
+          // Update the appointment status locally
+          setAppointments(prev => prev.map(apt => 
+            apt._id === appointmentId 
+              ? { ...apt, isCompleted: true, patientVisited: true, status: 'completed', isConfirmed: true }
+              : apt
+          ));
+        } else {
+          toast.error(data.message || 'Failed to complete appointment');
         }
       } else if (newStatus === 'cancelled') {
         const { data } = await axios.put(
@@ -105,7 +130,28 @@ const DoctorAppointment = () => {
 
         if (data.success) {
           toast.success('Appointment cancelled successfully');
-          await fetchAppointments();
+          // First update local state
+          setAppointments(prev => prev.map(apt => 
+            apt._id === appointmentId 
+              ? { 
+                  ...apt, 
+                  cancelled: true, 
+                  status: 'cancelled',
+                  isConfirmed: false,
+                  isCompleted: false,
+                  patientVisited: false
+                }
+              : apt
+          ));
+          // Then fetch fresh data after a short delay to ensure backend has processed the change
+          setTimeout(async () => {
+            try {
+              await fetchAppointments();
+            } catch (error) {
+              console.error('Error refreshing appointments:', error);
+              // If refresh fails, at least we have the local state update
+            }
+          }, 500);
         } else {
           toast.error(data.message || 'Failed to cancel appointment');
         }
@@ -209,13 +255,17 @@ const DoctorAppointment = () => {
   };
 
   const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'confirmed':
+    switch (status?.toLowerCase()) {
+      case 'completed':
         return 'bg-green-100 text-green-800 border-green-200';
+      case 'confirmed':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'cancelled':
         return 'bg-red-100 text-red-800 border-red-200';
+      case 'missed':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -356,69 +406,84 @@ const DoctorAppointment = () => {
 
                     {/* Actions */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {appointment.status === 'pending' && (
-                        <div className="flex space-x-2">
+                      <div className="flex space-x-2">
+                        {/* Confirm Button */}
+                        {!appointment.isConfirmed && !appointment.isCompleted && !appointment.cancelled && (
                           <button
                             onClick={() => handleStatusChange(appointment._id, 'confirmed', appointment.patientName)}
                             disabled={processingAppointments.has(appointment._id)}
-                            className={`flex items-center justify-center px-3 py-1 rounded-lg transition-colors duration-200 ${
+                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
+                              processingAppointments.has(appointment._id)
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                          >
+                            {processingAppointments.has(appointment._id) ? (
+                              <FaSpinner className="animate-spin mr-1" />
+                            ) : (
+                              <FaCheck className="mr-1" />
+                            )}
+                            Confirm
+                          </button>
+                        )}
+                        {/* Complete Button */}
+                        {appointment.isConfirmed && !appointment.isCompleted && !appointment.cancelled && (
+                          <button
+                            onClick={() => handleStatusChange(appointment._id, 'completed', appointment.patientName)}
+                            disabled={processingAppointments.has(appointment._id)}
+                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
                               processingAppointments.has(appointment._id)
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-green-500 hover:bg-green-600'
-                            } text-white`}
+                            }`}
                           >
                             {processingAppointments.has(appointment._id) ? (
-                              <>
-                                <FaSpinner className="animate-spin mr-2" />
-                                Processing...
-                              </>
+                              <FaSpinner className="animate-spin mr-1" />
                             ) : (
-                              'Confirm'
+                              <FaCheck className="mr-1" />
                             )}
+                            Complete
                           </button>
+                        )}
+                        {/* Cancel Button */}
+                        {!appointment.isCompleted && !appointment.cancelled && (
                           <button
                             onClick={() => handleStatusChange(appointment._id, 'cancelled', appointment.patientName)}
                             disabled={processingAppointments.has(appointment._id)}
-                            className={`flex items-center justify-center px-3 py-1 rounded-lg transition-colors duration-200 ${
+                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
                               processingAppointments.has(appointment._id)
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-red-500 hover:bg-red-600'
-                            } text-white`}
+                            }`}
                           >
                             {processingAppointments.has(appointment._id) ? (
-                              <>
-                                <FaSpinner className="animate-spin mr-2" />
-                                Processing...
-                              </>
+                              <FaSpinner className="animate-spin mr-1" />
                             ) : (
-                              'Cancel'
+                              <FaTimes className="mr-1" />
                             )}
+                            Cancel
                           </button>
-                        </div>
-                      )}
-                      {(appointment.status === 'cancelled' || appointment.status === 'completed') && (
-                        <button
-                          onClick={() => handleDelete(appointment._id, appointment.patientName)}
-                          disabled={processingAppointments.has(appointment._id)}
-                          className={`flex items-center justify-center px-3 py-1 rounded-lg transition-colors duration-200 ${
-                            processingAppointments.has(appointment._id)
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : 'bg-red-500 hover:bg-red-600'
-                          } text-white`}
-                        >
-                          {processingAppointments.has(appointment._id) ? (
-                            <>
-                              <FaSpinner className="animate-spin mr-2" />
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <FaTrash className="mr-2" />
-                              Delete
-                            </>
-                          )}
-                        </button>
-                      )}
+                        )}
+                        {/* Delete Button */}
+                        {(appointment.cancelled || appointment.isCompleted) && (
+                          <button
+                            onClick={() => handleDelete(appointment._id, appointment.patientName)}
+                            disabled={processingAppointments.has(appointment._id)}
+                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
+                              processingAppointments.has(appointment._id)
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gray-500 hover:bg-gray-600'
+                            }`}
+                          >
+                            {processingAppointments.has(appointment._id) ? (
+                              <FaSpinner className="animate-spin mr-1" />
+                            ) : (
+                              <FaTrash className="mr-1" />
+                            )}
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

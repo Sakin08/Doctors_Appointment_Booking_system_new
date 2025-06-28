@@ -3,25 +3,33 @@ import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const MyAppointment = () => {
+const AppointmentHistory = () => {
   const { backendUrl, token } = useContext(AppContext);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(null); // Track which appointment is being deleted
 
-  const getUserAppointments = async () => {
+  const getAppointmentHistory = async () => {
     setLoading(true);
     try {
       const { data } = await axios.get(`${backendUrl}/api/user/appointments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data.success) {
-        // Only show pending appointments
-        const pendingAppointments = data.appointments.filter(
-          apt => apt.status === 'pending'
-        );
-        setAppointments(pendingAppointments);
+        // Show all non-pending appointments (confirmed, completed, cancelled, missed)
+        const historicalAppointments = data.appointments.filter(
+          apt => apt.status !== 'pending'
+        ).sort((a, b) => {
+          // Sort by date, most recent first
+          const [dayA, monthA, yearA] = a.slotDate.split('_');
+          const [dayB, monthB, yearB] = b.slotDate.split('_');
+          const dateA = new Date(yearA, monthA - 1, dayA);
+          const dateB = new Date(yearB, monthB - 1, dayB);
+          return dateB - dateA;
+        });
+        setAppointments(historicalAppointments);
       } else {
-        toast.error(data.message || "Failed to fetch appointments");
+        toast.error(data.message || "Failed to fetch appointment history");
         setAppointments([]);
       }
     } catch (error) {
@@ -33,26 +41,27 @@ const MyAppointment = () => {
     }
   };
 
-  const handleCancelAppointment = async (appointmentId) => {
-    const confirmCancel = window.confirm("Are you sure you want to cancel this appointment?");
-    if (!confirmCancel) return;
+  const handleDeleteAppointment = async (appointmentId) => {
+    const confirmDelete = window.confirm("Are you sure you want to remove this appointment from history?");
+    if (!confirmDelete) return;
 
+    setDeleting(appointmentId);
     try {
-      const { data } = await axios.post(
-        `${backendUrl}/api/user/cancel-appointment`,
-        { appointmentId },
+      const { data } = await axios.delete(
+        `${backendUrl}/api/user/delete-appointment/${appointmentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (data.success) {
-        toast.success(data.message);
-        // Remove the cancelled appointment immediately from the UI
         setAppointments(prev => prev.filter(apt => apt._id !== appointmentId));
+        toast.success(data.message || "Appointment removed from history successfully");
       } else {
-        toast.error(data.message || "Failed to cancel appointment");
+        toast.error(data.message || "Failed to remove appointment");
       }
     } catch (error) {
-      console.error("Error canceling appointment:", error);
-      toast.error(error.response?.data?.message || "Failed to cancel appointment");
+      console.error("Error deleting appointment:", error);
+      toast.error(error.response?.data?.message || "Failed to remove appointment");
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -86,10 +95,7 @@ const MyAppointment = () => {
 
   useEffect(() => {
     if (token) {
-      getUserAppointments();
-      // Refresh appointments every 30 seconds to check for doctor updates
-      const interval = setInterval(getUserAppointments, 30000);
-      return () => clearInterval(interval);
+      getAppointmentHistory();
     } else {
       setAppointments([]);
       setLoading(false);
@@ -99,7 +105,7 @@ const MyAppointment = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
       <h2 className="text-4xl font-bold mb-10 text-center text-gray-800 underline underline-offset-8 decoration-indigo-500">
-        My Appointments
+        Appointment History
       </h2>
 
       {loading ? (
@@ -112,10 +118,26 @@ const MyAppointment = () => {
             appointments.map((item, index) => (
               <div
                 key={index}
-                className="bg-gradient-to-br from-white via-blue-50 to-blue-100 border border-blue-200 rounded-2xl shadow-lg p-6 flex gap-6 items-start transition-all duration-300 hover:shadow-2xl"
+                className="bg-gradient-to-br from-white via-blue-50 to-blue-100 border border-blue-200 rounded-2xl shadow-lg p-6 flex gap-6 items-start transition-all duration-300 hover:shadow-2xl relative"
               >
-                {/* Status Badge - Top Right */}
-                <div className="absolute top-4 right-4">
+                {/* Delete Button - Top Right */}
+                <button
+                  onClick={() => handleDeleteAppointment(item._id)}
+                  disabled={deleting === item._id}
+                  className="absolute top-4 right-4 p-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-600 transition-colors duration-200"
+                  title="Remove from history"
+                >
+                  {deleting === item._id ? (
+                    <div className="w-5 h-5 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Status Badge - Below Delete Button */}
+                <div className="absolute top-14 right-4">
                   <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusBadgeClass(item.status)} capitalize`}>
                     {item.status}
                   </span>
@@ -129,9 +151,7 @@ const MyAppointment = () => {
                     className={`w-full h-full object-cover rounded-full border-4 ${
                       item.status === 'cancelled' 
                         ? 'border-gray-300 filter grayscale' 
-                        : item.status === 'completed'
-                        ? 'border-green-200 hover:border-green-400'
-                        : 'border-blue-200 hover:border-indigo-400'
+                        : 'border-green-200'
                     } transition duration-300`}
                   />
                 </div>
@@ -158,43 +178,17 @@ const MyAppointment = () => {
                     <span>{item.slotTime}</span>
                   </div>
 
-                  {item.status === 'cancelled' && (
-                    <div className="mt-4 text-red-600 text-sm font-medium">
-                      This appointment has been cancelled
-                    </div>
-                  )}
-                  {item.status === 'completed' && (
-                    <div className="mt-4 text-green-600 text-sm font-medium">
-                      Appointment completed successfully
-                    </div>
-                  )}
-                  {item.status === 'confirmed' && (
-                    <div className="mt-4 text-blue-600 text-sm font-medium">
-                      Appointment confirmed by doctor
-                    </div>
-                  )}
-                  {item.status === 'missed' && (
-                    <div className="mt-4 text-orange-600 text-sm font-medium">
-                      Appointment was missed
-                    </div>
-                  )}
-                </div>
-
-                {/* Buttons */}
-                <div className="flex flex-col gap-2">
-                  {!item.payment && item.status === 'pending' && (
-                    <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm shadow-md hover:shadow-lg transition duration-300 cursor-pointer">
-                      Pay Online
-                    </button>
-                  )}
-                  {item.status === 'pending' && (
-                    <button
-                      onClick={() => handleCancelAppointment(item._id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm shadow-md hover:shadow-lg transition duration-300 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  )}
+                  {/* Payment Status */}
+                  <div className="mt-4 text-sm">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full ${
+                      item.payment ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {item.payment ? 'Paid Online' : 'Cash Payment'}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))
@@ -203,7 +197,7 @@ const MyAppointment = () => {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-              <p className="text-gray-500 text-lg">No appointments found</p>
+              <p className="text-gray-500 text-lg">No appointment history found</p>
             </div>
           )}
         </div>
@@ -212,4 +206,4 @@ const MyAppointment = () => {
   );
 };
 
-export default MyAppointment;
+export default AppointmentHistory; 

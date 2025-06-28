@@ -8,6 +8,7 @@ import {
     getDoctorAppointments,
     cancelDoctorAppointment,
     deleteDoctorAppointment,
+    confirmAppointment,
     completeAppointment,
     getDoctorDashboardStats
 } from '../controllers/doctorController.js'
@@ -29,6 +30,7 @@ doctorRouter.get('/list', doctorList)
 doctorRouter.get('/appointments', verifyDoctor, getDoctorAppointments)
 doctorRouter.get('/dashboard-stats', verifyDoctor, getDoctorDashboardStats)
 doctorRouter.put('/cancel-appointment', verifyDoctor, cancelDoctorAppointment)
+doctorRouter.put('/confirm-appointment', verifyDoctor, confirmAppointment)
 doctorRouter.put('/complete-appointment', verifyDoctor, completeAppointment)
 doctorRouter.delete('/delete-appointment/:id', verifyDoctor, deleteDoctorAppointment)
 

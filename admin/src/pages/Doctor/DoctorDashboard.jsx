@@ -11,6 +11,8 @@ import {
   FaSpinner,
   FaCheck,
   FaTimes,
+  FaCheckCircle,
+  FaSync,
 } from 'react-icons/fa';
 
 // Stat Card Component
@@ -130,7 +132,7 @@ const DoctorDashboard = () => {
 
       if (newStatus === 'confirmed') {
         const { data } = await axios.put(
-          `${backendUrl}/api/doctor/complete-appointment`,
+          `${backendUrl}/api/doctor/confirm-appointment`,
           { appointmentId },
           { headers: { dtoken: dToken } }
         );
@@ -140,6 +142,19 @@ const DoctorDashboard = () => {
           await fetchDashboardStats();
         } else {
           toast.error(data.message || 'Failed to confirm appointment');
+        }
+      } else if (newStatus === 'completed') {
+        const { data } = await axios.put(
+          `${backendUrl}/api/doctor/complete-appointment`,
+          { appointmentId, patientVisited: true },
+          { headers: { dtoken: dToken } }
+        );
+
+        if (data.success) {
+          toast.success('Appointment marked as completed');
+          await fetchDashboardStats();
+        } else {
+          toast.error(data.message || 'Failed to complete appointment');
         }
       } else if (newStatus === 'cancelled') {
         const { data } = await axios.put(
@@ -209,7 +224,7 @@ const DoctorDashboard = () => {
       </div>
       
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <StatCard
           title="Total Appointments"
           value={stats.totalAppointments}
@@ -221,6 +236,12 @@ const DoctorDashboard = () => {
           value={stats.completedAppointments}
           icon={FaCalendarCheck}
           color="text-green-600"
+        />
+        <StatCard
+          title="Confirmed"
+          value={stats.confirmedAppointments}
+          icon={FaCheckCircle}
+          color="text-blue-600"
         />
         <StatCard
           title="Pending"
@@ -238,7 +259,16 @@ const DoctorDashboard = () => {
 
       {/* Today's Appointments */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Today's Appointments</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">Today's Appointments</h2>
+          <button 
+            onClick={fetchDashboardStats}
+            className="flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
+          >
+            <FaSync className={`mr-1 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
         {stats.todayAppointments.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No appointments scheduled for today
@@ -268,38 +298,60 @@ const DoctorDashboard = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleStatusChange(appointment._id, 'confirmed', appointment.patientName)}
-                          disabled={processingAppointments.has(appointment._id)}
-                          className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
-                            processingAppointments.has(appointment._id)
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : 'bg-green-500 hover:bg-green-600'
-                          }`}
-                        >
-                          {processingAppointments.has(appointment._id) ? (
-                            <FaSpinner className="animate-spin mr-1" />
-                          ) : (
-                            <FaCheck className="mr-1" />
-                          )}
-                          Complete
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange(appointment._id, 'cancelled', appointment.patientName)}
-                          disabled={processingAppointments.has(appointment._id)}
-                          className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
-                            processingAppointments.has(appointment._id)
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : 'bg-red-500 hover:bg-red-600'
-                          }`}
-                        >
-                          {processingAppointments.has(appointment._id) ? (
-                            <FaSpinner className="animate-spin mr-1" />
-                          ) : (
-                            <FaTimes className="mr-1" />
-                          )}
-                          Cancel
-                        </button>
+                        {!appointment.isConfirmed && !appointment.isCompleted && !appointment.cancelled && (
+                          <button
+                            onClick={() => handleStatusChange(appointment._id, 'confirmed', appointment.patientName)}
+                            disabled={processingAppointments.has(appointment._id)}
+                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
+                              processingAppointments.has(appointment._id)
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                          >
+                            {processingAppointments.has(appointment._id) ? (
+                              <FaSpinner className="animate-spin mr-1" />
+                            ) : (
+                              <FaCheck className="mr-1" />
+                            )}
+                            Confirm
+                          </button>
+                        )}
+                        {appointment.isConfirmed && !appointment.isCompleted && !appointment.cancelled && (
+                          <button
+                            onClick={() => handleStatusChange(appointment._id, 'completed', appointment.patientName)}
+                            disabled={processingAppointments.has(appointment._id)}
+                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
+                              processingAppointments.has(appointment._id)
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-green-500 hover:bg-green-600'
+                            }`}
+                          >
+                            {processingAppointments.has(appointment._id) ? (
+                              <FaSpinner className="animate-spin mr-1" />
+                            ) : (
+                              <FaCheck className="mr-1" />
+                            )}
+                            Complete
+                          </button>
+                        )}
+                        {!appointment.isCompleted && !appointment.cancelled && (
+                          <button
+                            onClick={() => handleStatusChange(appointment._id, 'cancelled', appointment.patientName)}
+                            disabled={processingAppointments.has(appointment._id)}
+                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
+                              processingAppointments.has(appointment._id)
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-red-500 hover:bg-red-600'
+                            }`}
+                          >
+                            {processingAppointments.has(appointment._id) ? (
+                              <FaSpinner className="animate-spin mr-1" />
+                            ) : (
+                              <FaTimes className="mr-1" />
+                            )}
+                            Cancel
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

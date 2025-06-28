@@ -37,11 +37,23 @@ const appointmentSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    isConfirmed: {
+        type: Boolean,
+        default: false
+    },
     isCompleted: {
         type: Boolean,
         default: false
     },
+    patientVisited: {
+        type: Boolean,
+        default: false
+    },
     showToUser: {
+        type: Boolean,
+        default: true
+    },
+    showToDoctor: {
         type: Boolean,
         default: true
     }

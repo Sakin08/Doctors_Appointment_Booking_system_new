@@ -182,10 +182,21 @@ const listAppointment = async (req, res) => {
     .lean();
 
     // Transform appointments to include status
-    const transformedAppointments = appointments.map(appointment => ({
-      ...appointment,
-      status: appointment.cancelled ? 'cancelled' : appointment.isCompleted ? 'completed' : 'pending'
-    }));
+    const transformedAppointments = appointments.map(appointment => {
+      let status = 'pending';
+      if (appointment.cancelled) {
+        status = 'cancelled';
+      } else if (appointment.isCompleted) {
+        status = appointment.patientVisited ? 'completed' : 'missed';
+      } else if (appointment.isConfirmed) {
+        status = 'confirmed';
+      }
+
+      return {
+        ...appointment,
+        status
+      };
+    });
 
     res.json({ success: true, appointments: transformedAppointments });
   } catch (error) {
@@ -233,4 +244,36 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment };
+const deleteAppointmentHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Find and delete the appointment that belongs to the user and is either cancelled or completed
+    const appointment = await appointmentModel.findOneAndDelete({
+      _id: id,
+      userId,
+      $or: [{ cancelled: true }, { isCompleted: true }]
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Appointment not found or cannot be deleted" 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: "Appointment removed from history successfully" 
+    });
+  } catch (error) {
+    console.error("Error deleting appointment history:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to delete appointment: " + error.message 
+    });
+  }
+};
+
+export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, deleteAppointmentHistory };

@@ -149,7 +149,10 @@ const updateDoctorProfile = async (req, res) => {
 const getDoctorAppointments = async (req, res) => {
     try {
         const docId = req.doctorId;
-        const appointments = await appointmentModel.find({ docId })
+        const appointments = await appointmentModel.find({ 
+            docId,
+            showToDoctor: true  // Only show appointments that are visible to the doctor
+        })
             .sort({ date: -1 })
             .lean();
 
@@ -172,6 +175,16 @@ const getDoctorAppointments = async (req, res) => {
                     }
                 }
 
+                // Calculate appointment status
+                let status = 'pending';
+                if (appointment.cancelled) {
+                    status = 'cancelled';
+                } else if (appointment.isCompleted) {
+                    status = appointment.patientVisited ? 'completed' : 'missed';
+                } else if (appointment.isConfirmed) {
+                    status = 'confirmed';
+                }
+
                 return {
                     _id: appointment._id,
                     patientName: user?.name || 'Unknown',
@@ -180,7 +193,11 @@ const getDoctorAppointments = async (req, res) => {
                     time: appointment.slotTime,
                     fees: appointment.amount,
                     paymentMode: appointment.payment ? 'Online' : 'Cash',
-                    status: appointment.cancelled ? 'cancelled' : appointment.isCompleted ? 'completed' : 'pending',
+                    status,
+                    isConfirmed: appointment.isConfirmed,
+                    isCompleted: appointment.isCompleted,
+                    patientVisited: appointment.patientVisited,
+                    cancelled: appointment.cancelled,
                     userData: {
                         name: user?.name,
                         email: user?.email,
@@ -206,14 +223,19 @@ const cancelDoctorAppointment = async (req, res) => {
 
         const appointment = await appointmentModel.findOne({
             _id: appointmentId,
-            docId
+            docId,
+            isCompleted: false
         });
 
         if (!appointment) {
-            return res.json({ success: false, message: 'Appointment not found' });
+            return res.json({ success: false, message: 'Appointment not found or cannot be cancelled' });
         }
 
+        // Reset all status flags and set cancelled to true
         appointment.cancelled = true;
+        appointment.isConfirmed = false;
+        appointment.isCompleted = false;
+        appointment.patientVisited = false;
         await appointment.save();
 
         // Remove the booked slot from doctor's schedule
@@ -255,15 +277,18 @@ const deleteDoctorAppointment = async (req, res) => {
             });
         }
 
-        await appointmentModel.deleteOne({ _id: appointmentId });
-        res.json({ success: true, message: 'Appointment deleted successfully' });
+        // Instead of deleting, just hide from doctor's view
+        appointment.showToDoctor = false;
+        await appointment.save();
+
+        res.json({ success: true, message: 'Appointment removed from history successfully' });
     } catch (error) {
         console.error(error);
         res.json({ success: false, message: error.message });
     }
 };
 
-const completeAppointment = async (req, res) => {
+const confirmAppointment = async (req, res) => {
     try {
         const { appointmentId } = req.body;
         const docId = req.doctorId;
@@ -272,6 +297,37 @@ const completeAppointment = async (req, res) => {
             _id: appointmentId,
             docId,
             cancelled: false,
+            isConfirmed: false,
+            isCompleted: false
+        });
+
+        if (!appointment) {
+            return res.json({ 
+                success: false, 
+                message: 'Appointment not found or cannot be confirmed' 
+            });
+        }
+
+        appointment.isConfirmed = true;
+        await appointment.save();
+
+        res.json({ success: true, message: 'Appointment confirmed successfully' });
+    } catch (error) {
+        console.error(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const completeAppointment = async (req, res) => {
+    try {
+        const { appointmentId, patientVisited } = req.body;
+        const docId = req.doctorId;
+
+        const appointment = await appointmentModel.findOne({
+            _id: appointmentId,
+            docId,
+            cancelled: false,
+            isConfirmed: true,
             isCompleted: false
         });
 
@@ -283,9 +339,15 @@ const completeAppointment = async (req, res) => {
         }
 
         appointment.isCompleted = true;
+        appointment.patientVisited = patientVisited;
         await appointment.save();
 
-        res.json({ success: true, message: 'Appointment completed successfully' });
+        res.json({ 
+            success: true, 
+            message: patientVisited ? 
+                'Appointment marked as completed with patient visit' : 
+                'Appointment marked as completed without patient visit'
+        });
     } catch (error) {
         console.error(error);
         res.json({ success: false, message: error.message });
@@ -297,25 +359,41 @@ const getDoctorDashboardStats = async (req, res) => {
         const docId = req.doctorId;
 
         // Get total appointments for this doctor
-        const totalAppointments = await appointmentModel.countDocuments({ docId });
+        const totalAppointments = await appointmentModel.countDocuments({ 
+            docId,
+            showToDoctor: true 
+        });
 
         // Get completed appointments count
         const completedAppointments = await appointmentModel.countDocuments({ 
             docId, 
-            isCompleted: true 
+            isCompleted: true,
+            showToDoctor: true
+        });
+
+        // Get confirmed appointments count (not completed, not cancelled, but confirmed)
+        const confirmedAppointments = await appointmentModel.countDocuments({ 
+            docId, 
+            isConfirmed: true,
+            isCompleted: false,
+            cancelled: false,
+            showToDoctor: true
         });
 
         // Get cancelled appointments count
         const cancelledAppointments = await appointmentModel.countDocuments({ 
             docId, 
-            cancelled: true 
+            cancelled: true,
+            showToDoctor: true
         });
 
-        // Get pending appointments count
+        // Get pending appointments count (not confirmed, not completed, not cancelled)
         const pendingAppointments = await appointmentModel.countDocuments({ 
             docId, 
+            isConfirmed: false,
             isCompleted: false, 
-            cancelled: false 
+            cancelled: false,
+            showToDoctor: true
         });
 
         // Get today's appointments
@@ -325,12 +403,15 @@ const getDoctorDashboardStats = async (req, res) => {
             docId,
             slotDate: todayStr,
             cancelled: false,
-            isCompleted: false
+            showToDoctor: true
         }).sort({ slotTime: 1 }).lean();
 
         // Get recent appointments
         const recentAppointments = await appointmentModel
-            .find({ docId })
+            .find({ 
+                docId,
+                showToDoctor: true
+            })
             .sort({ createdAt: -1 })
             .limit(5)
             .lean();
@@ -354,6 +435,16 @@ const getDoctorDashboardStats = async (req, res) => {
                     }
                 }
 
+                // Calculate status
+                let status = 'pending';
+                if (appointment.cancelled) {
+                    status = 'cancelled';
+                } else if (appointment.isCompleted) {
+                    status = appointment.patientVisited ? 'completed' : 'missed';
+                } else if (appointment.isConfirmed) {
+                    status = 'confirmed';
+                }
+
                 return {
                     _id: appointment._id,
                     patientName: user?.name || 'Unknown',
@@ -362,7 +453,11 @@ const getDoctorDashboardStats = async (req, res) => {
                     time: appointment.slotTime,
                     fees: appointment.amount,
                     paymentMode: appointment.payment ? 'Online' : 'Cash',
-                    status: appointment.cancelled ? 'cancelled' : appointment.isCompleted ? 'completed' : 'pending',
+                    status,
+                    isConfirmed: appointment.isConfirmed,
+                    isCompleted: appointment.isCompleted,
+                    patientVisited: appointment.patientVisited,
+                    cancelled: appointment.cancelled,
                     userData: {
                         name: user?.name,
                         email: user?.email,
@@ -377,6 +472,7 @@ const getDoctorDashboardStats = async (req, res) => {
         const stats = {
             totalAppointments,
             completedAppointments,
+            confirmedAppointments,
             cancelledAppointments,
             pendingAppointments,
             todayAppointments: appointmentsWithUserDetails.slice(0, todayAppointments.length),
@@ -399,6 +495,7 @@ export {
     getDoctorAppointments,
     cancelDoctorAppointment,
     deleteDoctorAppointment,
+    confirmAppointment,
     completeAppointment,
     getDoctorDashboardStats
 }
