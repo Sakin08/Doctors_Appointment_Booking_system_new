@@ -1,6 +1,7 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
+import ScrollToTop from './components/ScrollToTop'
 
 // Import all your page components
 import Home from './pages/Home'
@@ -24,6 +25,7 @@ const App = () => {
 
       {/* Main Page Content with Padding for Fixed Navbar */}
       <div className="pt-24 px-4 sm:px-[10%]">
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />

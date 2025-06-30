@@ -13,25 +13,24 @@ const Doctors = () => {
 
   const applyFilter = () => {
     let filtered = doctors;
-
+    
     if (speciality) {
       filtered = filtered.filter((doc) => doc.speciality === speciality);
     }
-
+    
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter((doc) =>
-        doc.name.toLowerCase().includes(query) ||
+      filtered = filtered.filter((doc) => 
+        doc.name.toLowerCase().includes(query) || 
         doc.speciality.toLowerCase().includes(query)
       );
     }
-
+    
     setFilterDoc(filtered);
   };
 
   useEffect(() => {
     applyFilter();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [doctors, speciality, searchQuery]);
 
   const handleSpecialityClick = (item) => {
