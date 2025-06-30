@@ -25,8 +25,37 @@ const changeAvailablity=async(req,res)=>{
 
 const doctorList=async(req,res)=>{
     try{
-        const doctors=await doctorModel.find({}).select(['-password','-email'])
-        res.json({success:true,doctors})
+        // Get appointment counts for all doctors
+        const appointmentCounts = await appointmentModel.aggregate([
+            {
+                $match: {
+                    cancelled: false
+                }
+            },
+            {
+                $group: {
+                    _id: "$docId",
+                    appointmentCount: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // Create a map of doctor ID to appointment count
+        const countMap = new Map(
+            appointmentCounts.map(item => [item._id.toString(), item.appointmentCount])
+        );
+
+        // Get all doctors
+        const doctors = await doctorModel.find({}).select(['-password', '-email']);
+
+        // Sort doctors by their appointment count
+        const sortedDoctors = doctors.sort((a, b) => {
+            const countA = countMap.get(a._id.toString()) || 0;
+            const countB = countMap.get(b._id.toString()) || 0;
+            return countB - countA;
+        });
+
+        res.json({ success: true, doctors: sortedDoctors });
     }catch(error){
         console.log(error)
         res.json({success:false,message:error.message})
@@ -486,6 +515,49 @@ const getDoctorDashboardStats = async (req, res) => {
     }
 };
 
+const getTopDoctors = async (req, res) => {
+    try {
+        // Get all appointments that are not cancelled
+        const appointments = await appointmentModel.aggregate([
+            {
+                $match: {
+                    cancelled: false
+                }
+            },
+            {
+                $group: {
+                    _id: "$docId",
+                    appointmentCount: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { appointmentCount: -1 }
+            }
+        ]);
+
+        // Get doctor details for each doctor ID
+        const topDoctors = await Promise.all(
+            appointments.map(async (item) => {
+                const doctor = await doctorModel.findById(item._id)
+                    .select('-password -email');
+                if (!doctor) return null; // Skip if doctor not found
+                return {
+                    ...doctor.toObject(),
+                    appointmentCount: item.appointmentCount
+                };
+            })
+        );
+
+        // Filter out any null values (doctors that weren't found)
+        const filteredDoctors = topDoctors.filter(doctor => doctor !== null);
+
+        res.json({ success: true, doctors: filteredDoctors });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
 export {
     changeAvailablity,
     doctorList,
@@ -497,5 +569,6 @@ export {
     deleteDoctorAppointment,
     confirmAppointment,
     completeAppointment,
-    getDoctorDashboardStats
+    getDoctorDashboardStats,
+    getTopDoctors
 }

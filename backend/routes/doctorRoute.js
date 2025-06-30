@@ -10,7 +10,8 @@ import {
     deleteDoctorAppointment,
     confirmAppointment,
     completeAppointment,
-    getDoctorDashboardStats
+    getDoctorDashboardStats,
+    getTopDoctors
 } from '../controllers/doctorController.js'
 import { verifyDoctor } from '../middlewares/authDoctor.js'
 import upload from '../middleware/multer.js'
@@ -33,5 +34,8 @@ doctorRouter.put('/cancel-appointment', verifyDoctor, cancelDoctorAppointment)
 doctorRouter.put('/confirm-appointment', verifyDoctor, confirmAppointment)
 doctorRouter.put('/complete-appointment', verifyDoctor, completeAppointment)
 doctorRouter.delete('/delete-appointment/:id', verifyDoctor, deleteDoctorAppointment)
+
+// Get top doctors sorted by appointment count
+doctorRouter.get('/top-doctors', getTopDoctors)
 
 export default doctorRouter
