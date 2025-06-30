@@ -74,17 +74,28 @@ const DoctorDashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
+      console.log('Fetching dashboard stats...');
+      console.log('Backend URL:', backendUrl);
+      console.log('Doctor Token:', dToken);
+      
       setLoading(true);
       const { data } = await axios.get(
         `${backendUrl}/api/doctor/dashboard-stats`,
         { headers: { dtoken: dToken } }
       );
+      
+      console.log('API Response:', data);
+      
       if (data.success) {
         setStats(data.stats);
+        console.log('Stats updated:', data.stats);
       } else {
+        console.error('API Error:', data.message);
         toast.error(data.message);
       }
     } catch (error) {
+      console.error('Fetch Error:', error);
+      console.error('Error Response:', error.response);
       toast.error(error.response?.data?.message || 'Failed to fetch dashboard statistics');
     } finally {
       setLoading(false);
@@ -199,11 +210,12 @@ const DoctorDashboard = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const [day, month, year] = dateString.split('_');
-    return `${month}/${day}/${year}`;
+    return `${day}/${month}/${year}`;
   };
 
   const formatTime = (timeString) => {
-    return timeString || '';
+    if (!timeString) return '';
+    return timeString.charAt(0).toUpperCase() + timeString.slice(1);
   };
 
   if (loading) {
@@ -295,10 +307,10 @@ const DoctorDashboard = () => {
                         <PatientAvatar patient={appointment.userData} />
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                        {formatTime(appointment.time)}
+                        {formatTime(appointment.slotTime)}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                        {appointment.paymentMode}
+                        {appointment.payment ? 'Online' : 'Cash'}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -388,10 +400,10 @@ const DoctorDashboard = () => {
                       <PatientAvatar patient={appointment.userData} />
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                      {formatDate(appointment.date)}
+                      {formatDate(appointment.slotDate)}
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                      {formatTime(appointment.time)}
+                      {formatTime(appointment.slotTime)}
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
