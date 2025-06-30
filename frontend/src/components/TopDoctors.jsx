@@ -33,7 +33,7 @@ const TopDoctors = () => {
       </motion.p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-        {topDoctors.slice(0, 10).map((item, index) => (
+        {topDoctors.slice(0, 12).map((item, index) => (
           <motion.div
             key={index}
             onClick={() => handleNavigate(`/appointment/${item._id}`)}

@@ -354,6 +354,32 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+const getAllAppointments = async (req, res) => {
+    try {
+        const appointments = await appointmentModel.find().sort({ createdAt: -1 });
+
+        // Format dates and add additional information
+        const formattedAppointments = appointments.map(appointment => {
+            // Format the date
+            const [day, month, year] = appointment.slotDate.split('_');
+            const formattedDate = `${day.padStart(2, '0')}_${month.padStart(2, '0')}_${year}`;
+
+            return {
+                ...appointment.toObject(),
+                slotDate: formattedDate
+            };
+        });
+
+        res.json({
+            success: true,
+            appointments: formattedAppointments
+        });
+    } catch (error) {
+        console.error('Error in getAllAppointments:', error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
 export { 
     addDoctor,
     loginAdmin,
@@ -361,5 +387,6 @@ export {
     appointmentAdmin,
     cancelAppointmentAdmin,
     deleteAppointment,
-    getDashboardStats
+    getDashboardStats,
+    getAllAppointments
 };
