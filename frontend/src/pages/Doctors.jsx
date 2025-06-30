@@ -8,7 +8,7 @@ const Doctors = () => {
   const navigate = useNavigate();
   const { doctors } = useContext(AppContext);
   const [filterDoc, setFilterDoc] = useState([]);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   const applyFilter = () => {
@@ -37,7 +37,7 @@ const Doctors = () => {
   const handleSpecialityClick = (item) => {
     navigate(`/doctors/${item}`);
     if (window.innerWidth < 768) {
-      setIsMobileFilterOpen(false);
+      setIsFilterOpen(false);
     }
   };
 
@@ -56,20 +56,20 @@ const Doctors = () => {
 
   return (
     <div className="min-h-screen px-4 py-6 bg-gray-50">
-      {/* Filter Toggle Button (Mobile Only) */}
-      <div className="md:hidden mb-4 flex justify-between items-center">
+      {/* Filter Toggle Button */}
+      <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-semibold text-blue-900">Doctors</h2>
         <button
           className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md shadow"
-          onClick={() => setIsMobileFilterOpen((prev) => !prev)}
+          onClick={() => setIsFilterOpen((prev) => !prev)}
         >
-          {isMobileFilterOpen ? 'Hide Filter' : 'Filter'}
+          {isFilterOpen ? 'Hide Filter' : 'Show Filter'}
         </button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar */}
-        {(isMobileFilterOpen || window.innerWidth >= 768) && (
+        {isFilterOpen && (
           <div className="md:w-1/4 w-full bg-white shadow rounded-lg p-4 md:sticky top-4 z-10">
             <h2 className="text-lg font-semibold mb-4 text-blue-800">Filter by Speciality</h2>
             <ul className="space-y-2 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
@@ -91,7 +91,7 @@ const Doctors = () => {
         )}
 
         {/* Main Content */}
-        <div className="md:w-3/4 w-full">
+        <div className={`${isFilterOpen ? 'md:w-3/4' : 'w-full'} w-full`}>
           {/* Search */}
           <div className="mb-4">
             <div className="relative">
