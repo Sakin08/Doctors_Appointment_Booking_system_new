@@ -13,6 +13,8 @@ import {
   FaTrash,
   FaCheck,
   FaTimes,
+  FaFilter,
+  FaChevronDown,
 } from 'react-icons/fa';
 
 const DoctorAppointment = () => {
@@ -21,6 +23,10 @@ const DoctorAppointment = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [processingAppointments, setProcessingAppointments] = useState(new Set());
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: 'all'
+  });
 
   const fetchAppointments = async () => {
     try {
@@ -246,12 +252,30 @@ const DoctorAppointment = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const [day, month, year] = dateString.split('_');
-    return `${month}/${day}/${year}`;
+    try {
+      const [day, month, year] = dateString.split('_').map(num => parseInt(num));
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      return `${day.toString().padStart(2, '0')} ${months[month - 1]}, ${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
   };
 
   const formatTime = (timeString) => {
-    return timeString || '';
+    if (!timeString) return '';
+    try {
+      const [hours, minutes] = timeString.split(':').map(num => parseInt(num));
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = hours % 12 || 12;
+      return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return timeString;
+    }
   };
 
   const getStatusBadgeClass = (status) => {
@@ -271,11 +295,24 @@ const DoctorAppointment = () => {
     }
   };
 
-  const filteredAppointments = appointments.filter(appointment => 
-    appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    appointment.userData?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    appointment.userData?.phone?.includes(searchTerm)
-  );
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const filteredAppointments = appointments.filter(appointment => {
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = (
+      appointment.patientName?.toLowerCase().includes(searchLower) ||
+      appointment.userData?.email?.toLowerCase().includes(searchLower) ||
+      appointment.userData?.phone?.includes(searchTerm) ||
+      formatDate(appointment.date).toLowerCase().includes(searchLower) ||
+      formatTime(appointment.time).toLowerCase().includes(searchLower)
+    );
+
+    const matchesStatus = filters.status === 'all' || appointment.status?.toLowerCase() === filters.status;
+
+    return matchesSearch && matchesStatus;
+  });
 
   if (loading) {
     return (
@@ -287,24 +324,44 @@ const DoctorAppointment = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-6">
-          📅 My Appointments
-        </h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">My Appointments</h2>
         
-        {/* Search Bar */}
-        <div className="max-w-md mx-auto">
-          <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4">
+          {/* Search Bar */}
+          <div className="relative flex-grow sm:max-w-md">
             <input
               type="text"
-              placeholder="Search by patient name, email, or phone..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+              placeholder="Search by patient name, date..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          </div>
+
+          {/* Filter Dropdown */}
+          <div className="relative">
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              className="w-full sm:w-auto pl-10 pr-4 py-2 border rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="missed">Missed</option>
+            </select>
+            <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
+      </div>
+
+      {/* Results Count */}
+      <div className="mb-4 text-sm text-gray-600">
+        Showing {filteredAppointments.length} of {appointments.length} appointments
       </div>
 
       {appointments.length === 0 ? (
