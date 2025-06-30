@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { DoctorContext } from '../../context/DoctorContext';
+import { AppContext } from '../../context/AppContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import {
@@ -17,14 +18,14 @@ import {
 
 // Stat Card Component
 const StatCard = ({ title, value, icon: Icon, color }) => (
-  <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+  <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-gray-500 text-sm font-medium uppercase">{title}</p>
-        <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+        <p className="text-gray-500 text-xs sm:text-sm font-medium uppercase">{title}</p>
+        <p className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">{value}</p>
       </div>
-      <div className={`p-3 rounded-full ${color} bg-opacity-10`}>
-        <Icon className={`h-6 w-6 ${color}`} />
+      <div className={`p-2 sm:p-3 rounded-full ${color} bg-opacity-10`}>
+        <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${color}`} />
       </div>
     </div>
   </div>
@@ -36,7 +37,7 @@ const PatientAvatar = ({ patient }) => {
 
   return (
     <div className="flex items-center">
-      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+      <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
         {patient.image ? (
           <img
             src={patient.image}
@@ -44,26 +45,28 @@ const PatientAvatar = ({ patient }) => {
             className="h-full w-full object-cover"
           />
         ) : (
-          <FaUserAlt className="h-5 w-5 text-blue-500" />
+          <FaUserAlt className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
         )}
       </div>
-      <div className="ml-4">
-        <div className="text-sm font-medium text-gray-900">{patient.name || 'Unknown Patient'}</div>
-        {patient.age && <div className="text-sm text-gray-500">{patient.age} years</div>}
-        {patient.phone && <div className="text-xs text-gray-500">{patient.phone}</div>}
+      <div className="ml-2 sm:ml-4">
+        <div className="text-xs sm:text-sm font-medium text-gray-900">{patient.name || 'Unknown Patient'}</div>
+        {patient.age && <div className="text-xs sm:text-sm text-gray-500">{patient.age} years</div>}
+        {patient.phone && <div className="text-xs text-gray-500 hidden sm:block">{patient.phone}</div>}
       </div>
     </div>
   );
 };
 
 const DoctorDashboard = () => {
-  const { dToken, backendUrl } = useContext(DoctorContext);
+  const { dToken } = useContext(DoctorContext);
+  const { backendUrl } = useContext(AppContext);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalAppointments: 0,
     completedAppointments: 0,
     cancelledAppointments: 0,
     pendingAppointments: 0,
+    confirmedAppointments: 0,
     todayAppointments: [],
     recentAppointments: []
   });
@@ -212,21 +215,21 @@ const DoctorDashboard = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       <div className="mb-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
             Doctor Dashboard
           </h1>
-          <p className="mt-2 text-gray-600">Welcome back! Here's your practice overview</p>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">Welcome back! Here's your practice overview</p>
           <div className="mt-1 h-1 w-24 bg-gradient-to-r from-blue-600 to-teal-500 mx-auto rounded-full"></div>
         </div>
       </div>
       
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
         <StatCard
-          title="Total Appointments"
+          title="Total"
           value={stats.totalAppointments}
           icon={FaCalendarAlt}
           color="text-blue-600"
@@ -258,150 +261,154 @@ const DoctorDashboard = () => {
       </div>
 
       {/* Today's Appointments */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Today's Appointments</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Today's Appointments</h2>
           <button 
             onClick={fetchDashboardStats}
-            className="flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
+            className="flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
           >
             <FaSync className={`mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
         {stats.todayAppointments.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 text-sm sm:text-base">
             No appointments scheduled for today
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {stats.todayAppointments.map((appointment) => (
+                    <tr key={appointment._id} className="hover:bg-gray-50">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <PatientAvatar patient={appointment.userData} />
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                        {formatTime(appointment.time)}
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                        {appointment.paymentMode}
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          {!appointment.isConfirmed && !appointment.isCompleted && !appointment.cancelled && (
+                            <button
+                              onClick={() => handleStatusChange(appointment._id, 'confirmed', appointment.patientName)}
+                              disabled={processingAppointments.has(appointment._id)}
+                              className={`flex items-center justify-center px-2 sm:px-3 py-1 rounded-lg text-white text-xs sm:text-sm transition-colors duration-200 ${
+                                processingAppointments.has(appointment._id)
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-blue-500 hover:bg-blue-600'
+                              }`}
+                            >
+                              {processingAppointments.has(appointment._id) ? (
+                                <FaSpinner className="animate-spin mr-1" />
+                              ) : (
+                                <FaCheck className="mr-1" />
+                              )}
+                              Confirm
+                            </button>
+                          )}
+                          {appointment.isConfirmed && !appointment.isCompleted && !appointment.cancelled && (
+                            <button
+                              onClick={() => handleStatusChange(appointment._id, 'completed', appointment.patientName)}
+                              disabled={processingAppointments.has(appointment._id)}
+                              className={`flex items-center justify-center px-2 sm:px-3 py-1 rounded-lg text-white text-xs sm:text-sm transition-colors duration-200 ${
+                                processingAppointments.has(appointment._id)
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-green-500 hover:bg-green-600'
+                              }`}
+                            >
+                              {processingAppointments.has(appointment._id) ? (
+                                <FaSpinner className="animate-spin mr-1" />
+                              ) : (
+                                <FaCheck className="mr-1" />
+                              )}
+                              Complete
+                            </button>
+                          )}
+                          {!appointment.isCompleted && !appointment.cancelled && (
+                            <button
+                              onClick={() => handleStatusChange(appointment._id, 'cancelled', appointment.patientName)}
+                              disabled={processingAppointments.has(appointment._id)}
+                              className={`flex items-center justify-center px-2 sm:px-3 py-1 rounded-lg text-white text-xs sm:text-sm transition-colors duration-200 ${
+                                processingAppointments.has(appointment._id)
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-red-500 hover:bg-red-600'
+                              }`}
+                            >
+                              {processingAppointments.has(appointment._id) ? (
+                                <FaSpinner className="animate-spin mr-1" />
+                              ) : (
+                                <FaTimes className="mr-1" />
+                              )}
+                              Cancel
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Recent Appointments */}
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">Recent Appointments</h2>
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="inline-block min-w-full align-middle">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {stats.todayAppointments.map((appointment) => (
+                {stats.recentAppointments.map((appointment) => (
                   <tr key={appointment._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       <PatientAvatar patient={appointment.userData} />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                      {formatDate(appointment.date)}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                       {formatTime(appointment.time)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {appointment.paymentMode}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex space-x-2">
-                        {!appointment.isConfirmed && !appointment.isCompleted && !appointment.cancelled && (
-                          <button
-                            onClick={() => handleStatusChange(appointment._id, 'confirmed', appointment.patientName)}
-                            disabled={processingAppointments.has(appointment._id)}
-                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
-                              processingAppointments.has(appointment._id)
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-blue-500 hover:bg-blue-600'
-                            }`}
-                          >
-                            {processingAppointments.has(appointment._id) ? (
-                              <FaSpinner className="animate-spin mr-1" />
-                            ) : (
-                              <FaCheck className="mr-1" />
-                            )}
-                            Confirm
-                          </button>
-                        )}
-                        {appointment.isConfirmed && !appointment.isCompleted && !appointment.cancelled && (
-                          <button
-                            onClick={() => handleStatusChange(appointment._id, 'completed', appointment.patientName)}
-                            disabled={processingAppointments.has(appointment._id)}
-                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
-                              processingAppointments.has(appointment._id)
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-green-500 hover:bg-green-600'
-                            }`}
-                          >
-                            {processingAppointments.has(appointment._id) ? (
-                              <FaSpinner className="animate-spin mr-1" />
-                            ) : (
-                              <FaCheck className="mr-1" />
-                            )}
-                            Complete
-                          </button>
-                        )}
-                        {!appointment.isCompleted && !appointment.cancelled && (
-                          <button
-                            onClick={() => handleStatusChange(appointment._id, 'cancelled', appointment.patientName)}
-                            disabled={processingAppointments.has(appointment._id)}
-                            className={`flex items-center px-3 py-1 rounded-lg text-white text-sm transition-colors duration-200 ${
-                              processingAppointments.has(appointment._id)
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-red-500 hover:bg-red-600'
-                            }`}
-                          >
-                            {processingAppointments.has(appointment._id) ? (
-                              <FaSpinner className="animate-spin mr-1" />
-                            ) : (
-                              <FaTimes className="mr-1" />
-                            )}
-                            Cancel
-                          </button>
-                        )}
-                      </div>
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
+                        appointment.status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : appointment.status === 'cancelled'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {appointment.status}
+                      </span>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
-
-      {/* Recent Appointments */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Appointments</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {stats.recentAppointments.map((appointment) => (
-                <tr key={appointment._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <PatientAvatar patient={appointment.userData} />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatDate(appointment.date)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatTime(appointment.time)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      appointment.status === 'completed'
-                        ? 'bg-green-100 text-green-800'
-                        : appointment.status === 'cancelled'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {appointment.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
