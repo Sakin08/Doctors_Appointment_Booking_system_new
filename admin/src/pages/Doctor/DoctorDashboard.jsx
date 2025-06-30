@@ -75,9 +75,6 @@ const DoctorDashboard = () => {
   const fetchDashboardStats = async () => {
     try {
       console.log('Fetching dashboard stats...');
-      console.log('Backend URL:', backendUrl);
-      console.log('Doctor Token:', dToken);
-      
       setLoading(true);
       const { data } = await axios.get(
         `${backendUrl}/api/doctor/dashboard-stats`,
@@ -87,8 +84,11 @@ const DoctorDashboard = () => {
       console.log('API Response:', data);
       
       if (data.success) {
+        // Log the appointments data
+        console.log('Today\'s Appointments:', data.stats.todayAppointments);
+        console.log('Recent Appointments:', data.stats.recentAppointments);
+        
         setStats(data.stats);
-        console.log('Stats updated:', data.stats);
       } else {
         console.error('API Error:', data.message);
         toast.error(data.message);
@@ -209,13 +209,30 @@ const DoctorDashboard = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const [day, month, year] = dateString.split('_');
-    return `${day}/${month}/${year}`;
+    try {
+      const [day, month, year] = dateString.split('_').map(num => parseInt(num));
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      return `${day.toString().padStart(2, '0')} ${months[month - 1]}, ${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString; // Return original string if formatting fails
+    }
   };
 
   const formatTime = (timeString) => {
     if (!timeString) return '';
-    return timeString.charAt(0).toUpperCase() + timeString.slice(1);
+    try {
+      const [hours, minutes] = timeString.split(':').map(num => parseInt(num));
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = hours % 12 || 12;
+      return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return timeString; // Return original string if formatting fails
+    }
   };
 
   if (loading) {
@@ -306,11 +323,15 @@ const DoctorDashboard = () => {
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <PatientAvatar patient={appointment.userData} />
                       </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                        {formatTime(appointment.slotTime)}
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatTime(appointment.time)}
+                        </div>
                       </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                        {appointment.payment ? 'Online' : 'Cash'}
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {appointment.paymentMode}
+                        </div>
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -399,11 +420,15 @@ const DoctorDashboard = () => {
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       <PatientAvatar patient={appointment.userData} />
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                      {formatDate(appointment.slotDate)}
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatDate(appointment.date)}
+                      </div>
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                      {formatTime(appointment.slotTime)}
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatTime(appointment.time)}
+                      </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${

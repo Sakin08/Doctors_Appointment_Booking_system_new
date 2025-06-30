@@ -498,14 +498,22 @@ const getDoctorDashboardStats = async (req, res) => {
             })
         );
 
+        // Split appointments into today and recent
+        const todayAppointmentsWithDetails = appointmentsWithUserDetails.slice(0, todayAppointments.length);
+        const recentAppointmentsWithDetails = appointmentsWithUserDetails.slice(todayAppointments.length);
+
+        // Log the data being sent
+        console.log('Today\'s Appointments:', todayAppointmentsWithDetails);
+        console.log('Recent Appointments:', recentAppointmentsWithDetails);
+
         const stats = {
             totalAppointments,
             completedAppointments,
             confirmedAppointments,
             cancelledAppointments,
             pendingAppointments,
-            todayAppointments: appointmentsWithUserDetails.slice(0, todayAppointments.length),
-            recentAppointments: appointmentsWithUserDetails.slice(todayAppointments.length)
+            todayAppointments: todayAppointmentsWithDetails,
+            recentAppointments: recentAppointmentsWithDetails
         };
 
         res.json({ success: true, stats });
