@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { motion, AnimatePresence } from "framer-motion";
 
 const MyAppointment = () => {
   const { backendUrl, token } = useContext(AppContext);
@@ -15,7 +16,6 @@ const MyAppointment = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data.success) {
-        // Only show pending appointments
         const pendingAppointments = data.appointments.filter(
           apt => apt.status === 'pending'
         );
@@ -45,13 +45,11 @@ const MyAppointment = () => {
       );
       if (data.success) {
         toast.success(data.message);
-        // Remove the cancelled appointment immediately from the UI
         setAppointments(prev => prev.filter(apt => apt._id !== appointmentId));
       } else {
         toast.error(data.message || "Failed to cancel appointment");
       }
     } catch (error) {
-      console.error("Error canceling appointment:", error);
       toast.error(error.response?.data?.message || "Failed to cancel appointment");
     }
   };
@@ -87,7 +85,6 @@ const MyAppointment = () => {
   useEffect(() => {
     if (token) {
       getUserAppointments();
-      // Refresh appointments every 30 seconds to check for doctor updates
       const interval = setInterval(getUserAppointments, 30000);
       return () => clearInterval(interval);
     } else {
@@ -97,115 +94,123 @@ const MyAppointment = () => {
   }, [token]);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12">
-      <h2 className="text-4xl font-bold mb-10 text-center text-gray-800 underline underline-offset-8 decoration-indigo-500">
+    <div className="max-w-6xl mx-auto px-4 py-10">
+      <h2 className="text-3xl sm:text-4xl font-bold mb-10 text-center text-gray-800 underline underline-offset-8 decoration-indigo-500">
         My Appointments
       </h2>
 
       {loading ? (
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-8">
-          {appointments.length > 0 ? (
-            appointments.map((item, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-white via-blue-50 to-blue-100 border border-blue-200 rounded-2xl shadow-lg p-6 flex gap-6 items-start transition-all duration-300 hover:shadow-2xl"
+        <div className="grid sm:grid-cols-2 gap-6">
+          <AnimatePresence>
+            {appointments.length > 0 ? (
+              appointments.map((item) => (
+                <motion.div
+                  key={item._id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3 }}
+                  className="relative bg-gradient-to-br from-white via-blue-50 to-blue-100 border border-blue-200 rounded-2xl shadow-md hover:shadow-2xl p-6 flex flex-col sm:flex-row gap-4 sm:gap-6"
+                >
+                  {/* Status Badge */}
+                  <div className="absolute top-4 right-4">
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusBadgeClass(item.status)} capitalize`}>
+                      {item.status}
+                    </span>
+                  </div>
+
+                  {/* Image */}
+                  <div className="shrink-0 mx-auto sm:mx-0 w-24 h-24">
+                    <img
+                      src={item.docData.image}
+                      alt={item.docData.name}
+                      className={`w-full h-full object-cover rounded-full border-4 ${
+                        item.status === 'cancelled'
+                          ? 'border-gray-300 grayscale'
+                          : item.status === 'completed'
+                          ? 'border-green-200'
+                          : 'border-blue-200'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 text-center sm:text-left space-y-2">
+                    <h3 className="text-xl font-semibold text-gray-800">{item.docData.name}</h3>
+                    <p className="text-indigo-600 font-medium">{item.docData.speciality}</p>
+                    <div className="text-gray-700 text-sm mt-2">
+                      <p className="font-semibold">Address:</p>
+                      <p>{item.docData.address.line1}</p>
+                      <p>{item.docData.address.line2}</p>
+                    </div>
+                    <div className="mt-3 text-sm flex flex-wrap justify-center sm:justify-start items-center gap-2 text-gray-600 font-medium">
+                      <span className="flex items-center gap-1">
+                        📅 {formatAppointmentDate(item.slotDate)}
+                      </span>
+                      <span className="text-gray-400">|</span>
+                      <span className="flex items-center gap-1">
+                        ⏰ {item.slotTime}
+                      </span>
+                    </div>
+
+                    {item.status === 'cancelled' && (
+                      <p className="text-red-600 text-sm font-medium mt-2">
+                        This appointment has been cancelled
+                      </p>
+                    )}
+                    {item.status === 'completed' && (
+                      <p className="text-green-600 text-sm font-medium mt-2">
+                        Appointment completed successfully
+                      </p>
+                    )}
+                    {item.status === 'confirmed' && (
+                      <p className="text-blue-600 text-sm font-medium mt-2">
+                        Appointment confirmed by doctor
+                      </p>
+                    )}
+                    {item.status === 'missed' && (
+                      <p className="text-orange-600 text-sm font-medium mt-2">
+                        Appointment was missed
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex sm:flex-col flex-row gap-2 sm:mt-0 mt-4 justify-center sm:justify-end items-center">
+                    {!item.payment && item.status === 'pending' && (
+                      <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm shadow-md transition">
+                        Pay Online
+                      </button>
+                    )}
+                    {item.status === 'pending' && (
+                      <button
+                        onClick={() => handleCancelAppointment(item._id)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm shadow-md transition"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <motion.div
+                className="col-span-2 text-center py-12"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
               >
-                {/* Status Badge - Top Right */}
-                <div className="absolute top-4 right-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusBadgeClass(item.status)} capitalize`}>
-                    {item.status}
-                  </span>
-                </div>
-
-                {/* Doctor Image */}
-                <div className="w-24 h-24 shrink-0">
-                  <img
-                    src={item.docData.image}
-                    alt={item.docData.name}
-                    className={`w-full h-full object-cover rounded-full border-4 ${
-                      item.status === 'cancelled' 
-                        ? 'border-gray-300 filter grayscale' 
-                        : item.status === 'completed'
-                        ? 'border-green-200 hover:border-green-400'
-                        : 'border-blue-200 hover:border-indigo-400'
-                    } transition duration-300`}
-                  />
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 space-y-2">
-                  <h3 className="text-2xl font-semibold text-gray-800">{item.docData.name}</h3>
-                  <p className="text-indigo-600 font-medium">{item.docData.speciality}</p>
-                  <div className="text-gray-700 text-sm mt-3 space-y-1">
-                    <p><span className="font-semibold">Address:</span></p>
-                    <p>{item.docData.address.line1}</p>
-                    <p>{item.docData.address.line2}</p>
-                  </div>
-
-                  <div className="mt-4 bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-lg border border-gray-200 inline-flex items-center text-sm tracking-wide transform hover:bg-gray-100 transition-colors duration-200 ease-in-out">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>{formatAppointmentDate(item.slotDate)}</span>
-                    <span className="mx-2 text-gray-400">|</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{item.slotTime}</span>
-                  </div>
-
-                  {item.status === 'cancelled' && (
-                    <div className="mt-4 text-red-600 text-sm font-medium">
-                      This appointment has been cancelled
-                    </div>
-                  )}
-                  {item.status === 'completed' && (
-                    <div className="mt-4 text-green-600 text-sm font-medium">
-                      Appointment completed successfully
-                    </div>
-                  )}
-                  {item.status === 'confirmed' && (
-                    <div className="mt-4 text-blue-600 text-sm font-medium">
-                      Appointment confirmed by doctor
-                    </div>
-                  )}
-                  {item.status === 'missed' && (
-                    <div className="mt-4 text-orange-600 text-sm font-medium">
-                      Appointment was missed
-                    </div>
-                  )}
-                </div>
-
-                {/* Buttons */}
-                <div className="flex flex-col gap-2">
-                  {!item.payment && item.status === 'pending' && (
-                    <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm shadow-md hover:shadow-lg transition duration-300 cursor-pointer">
-                      Pay Online
-                    </button>
-                  )}
-                  {item.status === 'pending' && (
-                    <button
-                      onClick={() => handleCancelAppointment(item._id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm shadow-md hover:shadow-lg transition duration-300 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-2 text-center py-12">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <p className="text-gray-500 text-lg">No appointments found</p>
-            </div>
-          )}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <p className="text-gray-500 text-lg">No appointments found</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>
