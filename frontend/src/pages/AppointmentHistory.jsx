@@ -18,7 +18,7 @@ const AppointmentHistory = () => {
       });
       if (data.success) {
         const historicalAppointments = data.appointments
-          .filter(apt => apt.status !== 'pending')
+          .filter(apt => apt.status !== 'pending' || apt.isConfirmed)
           .sort((a, b) => {
             const [dayA, monthA, yearA] = a.slotDate.split('_');
             const [dayB, monthB, yearB] = b.slotDate.split('_');
@@ -144,7 +144,10 @@ const AppointmentHistory = () => {
                     <span className={`inline-flex items-center px-3 py-1 rounded-full ${
                       item.payment ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                     }`}>
-                      💳 {item.payment ? "Paid Online" : "Cash Payment"}
+                      💳 {item.payment ? 
+                          (item.paymentMethod === 'cash' ? "Paid with Cash" : 
+                           item.paymentMethod ? `Paid via ${item.paymentMethod}` : "Payment Completed") 
+                          : "Unpaid"}
                     </span>
                   </div>
                 </div>

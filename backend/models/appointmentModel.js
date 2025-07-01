@@ -37,6 +37,14 @@ const appointmentSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    paymentMethod: {
+        type: String,
+        default: null
+    },
+    paymentInfo: {
+        type: Object,
+        default: null
+    },
     isConfirmed: {
         type: Boolean,
         default: false

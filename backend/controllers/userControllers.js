@@ -276,4 +276,47 @@ const deleteAppointmentHistory = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, deleteAppointmentHistory };
+const payCash = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
+    const userId = req.user.id;
+
+    // Find the appointment
+    const appointment = await appointmentModel.findOne({
+      _id: appointmentId,
+      userId,
+      cancelled: { $ne: true } // Ensure it's not cancelled
+    });
+
+    if (!appointment) {
+      return res.json({ 
+        success: false, 
+        message: "Appointment not found or unauthorized" 
+      });
+    }
+
+    // Update payment status
+    appointment.payment = true;
+    appointment.paymentMethod = 'cash';
+    appointment.paymentInfo = {
+      method: 'cash',
+      recordedAt: new Date(),
+      recordedBy: 'user'
+    };
+    
+    await appointment.save();
+
+    res.json({ 
+      success: true, 
+      message: "Cash payment recorded successfully" 
+    });
+  } catch (error) {
+    console.error("Error recording cash payment:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to record payment: " + error.message 
+    });
+  }
+};
+
+export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, deleteAppointmentHistory, payCash };

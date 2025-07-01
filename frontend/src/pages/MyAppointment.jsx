@@ -17,7 +17,7 @@ const MyAppointment = () => {
       });
       if (data.success) {
         const pendingAppointments = data.appointments.filter(
-          apt => apt.status === 'pending'
+          apt => apt.status === 'pending' && !apt.isConfirmed
         );
         setAppointments(pendingAppointments);
       } else {
@@ -63,6 +63,42 @@ const MyAppointment = () => {
       month: 'short',
       year: 'numeric'
     });
+  };
+
+  const handleCashPayment = async (appointmentId) => {
+    const confirmPay = window.confirm("Confirm payment with cash?");
+    if (!confirmPay) return;
+
+    try {
+      const { data } = await axios.post(
+        `${backendUrl}/api/user/pay-cash`,
+        { appointmentId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (data.success) {
+        toast.success(data.message || "Payment recorded successfully");
+        setAppointments(prev => 
+          prev.map(apt => 
+            apt._id === appointmentId ? { 
+              ...apt, 
+              payment: true,
+              paymentMethod: 'cash',
+              paymentInfo: {
+                method: 'cash',
+                recordedAt: new Date(),
+                recordedBy: 'user'
+              }
+            } : apt
+          )
+        );
+      } else {
+        toast.error(data.message || "Failed to record payment");
+      }
+    } catch (error) {
+      console.error("Cash payment error:", error);
+      toast.error(error.response?.data?.message || "Failed to record payment");
+    }
   };
 
   const getStatusBadgeClass = (status) => {
@@ -178,13 +214,32 @@ const MyAppointment = () => {
                         Appointment was missed
                       </p>
                     )}
+                    
+                    {/* Payment Status */}
+                    {item.payment && (
+                      <div className="mt-3 flex items-center">
+                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full border border-green-200 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          PAID
+                        </span>
+                        <span className="ml-2 text-gray-600 text-sm">
+                          {item.paymentMethod === 'cash' ? 'Cash payment' : 
+                           item.paymentMethod ? `Paid via ${item.paymentMethod}` : 
+                           ' CASH Payment '}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Buttons */}
                   <div className="flex sm:flex-col flex-row gap-2 sm:mt-0 mt-4 justify-center sm:justify-end items-center">
                     {!item.payment && item.status === 'pending' && (
-                      <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm shadow-md transition">
-                        Pay Online
+                      <button  
+                        onClick={() => handleCashPayment(item._id)}
+                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm shadow-md transition">
+                        Pay Cash
                       </button>
                     )}
                     {item.status === 'pending' && (

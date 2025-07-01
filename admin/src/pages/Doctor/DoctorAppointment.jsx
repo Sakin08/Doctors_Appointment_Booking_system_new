@@ -449,7 +449,17 @@ const DoctorAppointment = () => {
                         </div>
                         <div className="flex items-center">
                           <FaCreditCard className="mr-2 text-blue-500" />
-                          {appointment.paymentMode}
+                          {appointment.payment ? (
+                            appointment.paymentMethod === 'cash' ? (
+                              <span className="text-green-600 font-medium">Cash Payment</span>
+                            ) : (
+                              <span className="text-green-600 font-medium">
+                                {appointment.paymentMethod ? `Paid via ${appointment.paymentMethod}` : 'Payment with CASH'}
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-yellow-600">Unpaid</span>
+                          )}
                         </div>
                       </div>
                     </td>

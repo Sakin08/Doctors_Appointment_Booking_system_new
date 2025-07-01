@@ -78,7 +78,7 @@ const MyProfile = () => {
           <img
             src={imageFile ? URL.createObjectURL(imageFile) : userData.image}
             alt="Profile"
-            className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover cursor-pointer "
+            className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover cursor-pointers "
           />
           {isEdit && (
             <input

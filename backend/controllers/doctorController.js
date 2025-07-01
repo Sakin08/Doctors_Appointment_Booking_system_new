@@ -221,7 +221,12 @@ const getDoctorAppointments = async (req, res) => {
                     date: appointment.slotDate,
                     time: appointment.slotTime,
                     fees: appointment.amount,
-                    paymentMode: appointment.payment ? 'Online' : 'Cash',
+                    paymentMode: appointment.payment ? 
+                        (appointment.paymentMethod === 'cash' ? 'Cash Payment' : 
+                         appointment.paymentMethod ? `Paid via ${appointment.paymentMethod}` : 'Online') 
+                        : 'Unpaid',
+                    payment: appointment.payment,
+                    paymentMethod: appointment.paymentMethod,
                     status,
                     isConfirmed: appointment.isConfirmed,
                     isCompleted: appointment.isCompleted,
@@ -477,23 +482,15 @@ const getDoctorDashboardStats = async (req, res) => {
                 return {
                     _id: appointment._id,
                     patientName: user?.name || 'Unknown',
-                    age: age || 'N/A',
                     date: appointment.slotDate,
                     time: appointment.slotTime,
                     fees: appointment.amount,
-                    paymentMode: appointment.payment ? 'Online' : 'Cash',
+                    paymentMode: appointment.payment ? 
+                        (appointment.paymentMethod === 'cash' ? 'Cash Payment' : 
+                         appointment.paymentMethod ? `Paid via ${appointment.paymentMethod}` : 'Online') 
+                        : 'Unpaid',
                     status,
-                    isConfirmed: appointment.isConfirmed,
-                    isCompleted: appointment.isCompleted,
-                    patientVisited: appointment.patientVisited,
-                    cancelled: appointment.cancelled,
-                    userData: {
-                        name: user?.name,
-                        email: user?.email,
-                        phone: user?.phone,
-                        image: user?.image,
-                        age: age
-                    }
+                    userData: user || {}
                 };
             })
         );
