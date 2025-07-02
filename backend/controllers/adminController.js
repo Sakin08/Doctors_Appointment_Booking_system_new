@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import jwt from 'jsonwebtoken'
-import { Suspense } from "react";
+//import { Suspense } from "react";
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
 
