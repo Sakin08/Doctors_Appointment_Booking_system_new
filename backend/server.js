@@ -19,10 +19,7 @@ connectCloudinary()
 // Middleware
 app.use(express.json());
 // Enable CORS for all routes and origins
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+app.use(cors());
 
 //api endpoint
 app.use('/api/admin',adminRouter)
