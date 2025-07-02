@@ -14,13 +14,13 @@ import {
     getTopDoctors
 } from '../controllers/doctorController.js'
 import { verifyDoctor } from '../middlewares/authDoctor.js'
-import upload from '../middleware/multer.js'
+import upload, { cloudinaryUpload } from '../middleware/multer.js'
 
 const doctorRouter = express.Router()
 
 // Profile routes
 doctorRouter.get('/profile', verifyDoctor, getDoctorProfile)
-doctorRouter.put('/update-profile', verifyDoctor, upload.single('image'), updateDoctorProfile)
+doctorRouter.put('/update-profile', verifyDoctor, upload.single('image'), cloudinaryUpload.single(), updateDoctorProfile)
 doctorRouter.put('/change-availability', verifyDoctor, changeAvailablity)
 
 // Auth routes

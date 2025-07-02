@@ -74,12 +74,24 @@ const addDoctor = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    //upload image to cloudinary
-
-    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-      resource_type: "image",
-    });
-    const imageUrl = imageUpload.secure_url;
+    // Get image URL from Cloudinary (already uploaded by middleware)
+    let imageUrl = '';
+    
+    if (imageFile && imageFile.url) {
+      // New system: image is already uploaded to Cloudinary by middleware
+      imageUrl = imageFile.url;
+    } else if (imageFile && imageFile.path) {
+      // Old system: manual upload to Cloudinary using local path
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+      });
+      imageUrl = imageUpload.secure_url;
+    } else {
+      return res.json({
+        success: false,
+        message: "Please provide a profile image.",
+      });
+    }
 
     const doctorData = {
       name,

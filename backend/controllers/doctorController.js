@@ -134,10 +134,17 @@ const updateDoctorProfile = async (req, res) => {
         // Handle image upload if provided
         if (req.file) {
             try {
-                const imageUpload = await cloudinary.uploader.upload(req.file.path, {
-                    resource_type: "image",
-                });
-                updateData.image = imageUpload.secure_url;
+                // Check if image was already uploaded to Cloudinary by middleware
+                if (req.file.url) {
+                    // New system: image already uploaded to Cloudinary by middleware
+                    updateData.image = req.file.url;
+                } else if (req.file.path) {
+                    // Old system: manual upload to Cloudinary
+                    const imageUpload = await cloudinary.uploader.upload(req.file.path, {
+                        resource_type: "image",
+                    });
+                    updateData.image = imageUpload.secure_url;
+                }
             } catch (uploadError) {
                 console.error('Image upload error:', uploadError);
                 return res.json({

@@ -88,10 +88,17 @@ const updateProfile = async (req, res) => {
     };
 
     if (imageFile) {
-      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-        resource_type: "image",
-      });
-      updateData.image = imageUpload.secure_url;
+      // Check if the image was already uploaded to Cloudinary by our middleware
+      if (imageFile.url) {
+        // New system: image is already uploaded to Cloudinary
+        updateData.image = imageFile.url;
+      } else if (imageFile.path) {
+        // Old system: manual upload to Cloudinary using local path
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+          resource_type: "image",
+        });
+        updateData.image = imageUpload.secure_url;
+      }
     }
 
     await userModel.findByIdAndUpdate(userId, updateData);
