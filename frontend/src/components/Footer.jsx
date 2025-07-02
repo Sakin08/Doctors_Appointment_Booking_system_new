@@ -86,7 +86,7 @@ const Footer = () => {
         transition={{ delay: 0.4, duration: 0.6 }}
         className="mt-10 border-t border-gray-300 pt-4 text-center text-gray-500 text-xs select-none"
       >
-        © 2025 <span className="font-medium text-blue-600">Prescripto Medicare</span> — All Rights Reserved.
+        © 2025 <span className="font-medium text-blue-600">Medicare</span> — All Rights Reserved.
       </motion.div>
     </footer>
   );
