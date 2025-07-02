@@ -65,7 +65,7 @@ const Contact = () => {
               <span className="font-medium">Tel:</span> +880 1823-024067
             </p>
             <p className="text-gray-700">
-              <span className="font-medium">Email:</span> 2021331008@student.sust.edu
+              <span className="font-medium">Email:</span> support@medicare.com
             </p>
           </motion.div>
 

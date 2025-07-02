@@ -73,7 +73,7 @@ const Footer = () => {
                 href="mailto:2021331008@student.sust.edu"
                 className="hover:text-blue-800 transition-colors duration-300 break-all"
               >
-                ✉️ 2021331008@student.sust.edu
+                ✉️ support@medicare.com
               </a>
             </li>
           </ul>
