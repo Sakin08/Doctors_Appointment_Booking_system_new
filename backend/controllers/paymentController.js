@@ -12,87 +12,57 @@ const {
   FRONTEND_URL,
 } = process.env;
 
-// Function to dynamically determine the backend URL
+// Function to get backend URL
 const getBackendUrl = (req) => {
   try {
-    // Check if deployed
-    if (req && req.headers && req.headers.host && !req.headers.host.includes('localhost')) {
-      // We're in production - use the current host
+    if (req?.headers?.host && !req.headers.host.includes('localhost')) {
       const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
       return `${protocol}://${req.headers.host}`;
     }
   } catch (error) {
-    console.error('Error determining backend URL:', error);
-    // Continue to fallback
+    console.error("Error detecting backend URL:", error.message);
   }
-  
-  // Fallback to environment variable or default for local development
+
   return BACKEND_URL || 'http://localhost:4000';
 };
 
-// Function to dynamically determine the frontend URL
+// Function to get frontend URL
 const getFrontendUrl = (req) => {
   try {
-    // For production - detect based on origin or host
-    const origin = req && req.headers ? (req.headers.origin || req.headers.referer) : null;
-    
-    if (origin && typeof origin === 'string' && origin.startsWith('http') && !origin.includes('localhost')) {
-      try {
-        // Extract origin from headers
-        const url = new URL(origin);
-        return `${url.protocol}//${url.host}`;
-      } catch (e) {
-        console.error('Error parsing origin URL:', e);
-        // Continue to next detection method
-      }
+    const origin = req.headers?.origin || req.headers?.referer || '';
+
+    if (origin.startsWith('http') && !origin.includes('localhost')) {
+      return new URL(origin).origin;
     }
-    
-    // Check if backend host is available and not localhost
-    if (req && req.headers && req.headers.host && !req.headers.host.includes('localhost')) {
-      // Guess frontend URL by replacing api subdomain or using the same domain
-      const host = req.headers.host;
-      if (host.includes('api.')) {
-        // If backend is api.example.com, frontend is probably example.com
-        return `https://${host.replace('api.', '')}`;
-      } else {
-        // Otherwise use same domain (frontend might be on a different path)
-        return `https://${host}`;
-      }
+
+    if (req?.headers?.host && !req.headers.host.includes('localhost')) {
+      return `https://${req.headers.host.replace(/^api\./, '')}`;
     }
   } catch (error) {
-    console.error('Error determining frontend URL:', error);
-    // Continue to fallback
+    console.error("Error detecting frontend URL:", error.message);
   }
-  
-  // Fallback to environment variable or default for local development
+
   return FRONTEND_URL || 'http://localhost:5173';
 };
 
+// Initiate Payment
 export const initPayment = async (req, res) => {
   const { name, email, phone, amount, appointmentId } = req.body;
-  
+
   try {
-    // Get backend URL with fallback
     const backendUrl = getBackendUrl(req);
-    
-    // Check if we have a valid backend URL
-    if (!backendUrl || !backendUrl.includes('://')) {
-      console.error('Invalid backend URL:', backendUrl);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Invalid server configuration" 
-      });
+
+    if (!backendUrl.startsWith('http')) {
+      return res.status(500).json({ message: 'Invalid backend URL' });
     }
 
-    const tran_id = `txn_${Math.floor(Math.random() * 1000000000)}`;
+    const tran_id = `txn_${Math.floor(Math.random() * 1e9)}`;
+
     const data = {
       total_amount: amount || 500,
       currency: "BDT",
       tran_id,
-      // Include appointmentId in success URL for direct access
-      success_url: appointmentId 
-        ? `${backendUrl}/api/payment/success/${tran_id}/${appointmentId}`
-        : `${backendUrl}/api/payment/success/${tran_id}`,
+      success_url: `${backendUrl}/api/payment/success/${tran_id}/${appointmentId || ''}`,
       fail_url: `${backendUrl}/api/payment/fail`,
       cancel_url: `${backendUrl}/api/payment/cancel`,
       ipn_url: `${backendUrl}/api/payment/ipn`,
@@ -112,91 +82,63 @@ export const initPayment = async (req, res) => {
       cus_fax: "N/A",
     };
 
-    // Log the URLs for debugging
-    console.log('Payment callback URLs:', {
-      success_url: data.success_url,
-      fail_url: data.fail_url,
-      cancel_url: data.cancel_url
-    });
+    console.log("🚀 SSLCommerz Payment URLs:", data);
 
-    // Store the transaction ID in the appointment record first
     if (appointmentId) {
       const appointment = await appointmentModel.findById(appointmentId);
       if (appointment) {
-        if (!appointment.paymentInfo) {
-          appointment.paymentInfo = {};
-        }
-        appointment.paymentInfo.tran_id = tran_id;
+        appointment.paymentInfo = { tran_id };
         await appointment.save();
       }
     }
-    
+
     const sslcz = new SSLCommerzPayment(SSLCZ_STORE_ID, SSLCZ_STORE_PASS, SSLCZ_IS_LIVE === 'true');
     const apiResponse = await sslcz.init(data);
 
     if (apiResponse?.GatewayPageURL) {
       return res.status(200).json({ url: apiResponse.GatewayPageURL });
-    } else {
-      return res.status(500).json({ 
-        success: false, 
-        message: "SSLCommerz payment initiation failed" 
-      });
     }
+
+    return res.status(500).json({ message: "SSLCommerz payment initiation failed" });
   } catch (error) {
-    console.error("Payment init error:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Something went wrong", 
-      error: error.message 
-    });
+    console.error("❌ Payment init error:", error.message);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
 
+// Payment Success
 export const paymentSuccess = async (req, res) => {
   const { tran_id, appointmentId } = req.params;
   const frontendUrl = getFrontendUrl(req);
-  
+
   try {
-    // Check if we have an appointment ID directly from the URL
-    let appointment;
-    
+    let appointment = null;
+
     if (appointmentId) {
-      console.log(`🔍 Looking for appointment by ID: ${appointmentId}`);
       appointment = await appointmentModel.findById(appointmentId);
-    } 
-    
-    // Fallback: Try finding by transaction ID if no appointment found
+    }
+
     if (!appointment) {
-      console.log(`🔍 Looking for appointment by transaction ID: ${tran_id}`);
-      appointment = await appointmentModel.findOne({
-        "paymentInfo.tran_id": tran_id
-      });
+      appointment = await appointmentModel.findOne({ "paymentInfo.tran_id": tran_id });
     }
 
     if (appointment) {
-      // Update the appointment payment status
       appointment.payment = true;
       appointment.paymentMethod = "online";
-      
-      // If paymentInfo doesn't exist yet, create it
-      if (!appointment.paymentInfo) {
-        appointment.paymentInfo = {};
-      }
-      
-      // Store transaction info
-      appointment.paymentInfo.tran_id = tran_id;
-      appointment.paymentInfo.paid_at = new Date();
-      
+      appointment.paymentInfo = {
+        tran_id,
+        paid_at: new Date(),
+      };
       await appointment.save();
-      console.log("✅ Payment successful. Transaction ID:", tran_id, "Appointment updated");
+      console.log("✅ Payment recorded for appointment:", appointmentId || tran_id);
     } else {
-      console.log("❌ Payment successful but no matching appointment found. Transaction ID:", tran_id);
+      console.warn("⚠️ Payment success but appointment not found.");
     }
 
-    res.redirect(`${frontendUrl}/payment-success`);
+    return res.redirect(`${frontendUrl}/payment-success`);
   } catch (error) {
-    console.error("Error updating appointment payment status:", error);
-    res.redirect(`${frontendUrl}/payment-success`);
+    console.error("❌ Error processing payment success:", error.message);
+    return res.redirect(`${frontendUrl}/payment-success`);
   }
 };
 
@@ -217,31 +159,18 @@ export const paymentIPN = (req, res) => {
   res.status(200).json({ status: "received" });
 };
 
-// Test endpoint to verify URL detection
 export const testUrls = (req, res) => {
-  try {
-    const backendUrl = getBackendUrl(req);
-    const frontendUrl = getFrontendUrl(req);
-    
-    return res.status(200).json({
-      success: true,
-      urls: {
-        detectedBackendUrl: backendUrl,
-        detectedFrontendUrl: frontendUrl,
-        envBackendUrl: BACKEND_URL || 'not set',
-        envFrontendUrl: FRONTEND_URL || 'not set',
-        nodeEnv: process.env.NODE_ENV || 'not set',
-        host: req.headers.host,
-        origin: req.headers.origin,
-        referer: req.headers.referer,
-      }
-    });
-  } catch (error) {
-    console.error('Error in test URLs endpoint:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error testing URLs',
-      error: error.message
-    });
-  }
+  const backendUrl = getBackendUrl(req);
+  const frontendUrl = getFrontendUrl(req);
+
+  return res.status(200).json({
+    backendUrl,
+    frontendUrl,
+    envBackendUrl: BACKEND_URL,
+    envFrontendUrl: FRONTEND_URL,
+    host: req.headers.host,
+    protocol: req.protocol,
+    origin: req.headers.origin || '',
+    referer: req.headers.referer || '',
+  });
 };
