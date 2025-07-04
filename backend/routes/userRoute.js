@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, deleteAppointmentHistory, payCash } from "../controllers/userControllers.js";
+import { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, deleteAppointmentHistory, payCash, getDoctorById } from "../controllers/userControllers.js";
 import authUser from "../middleware/authUser.js";
 import upload, { cloudinaryUpload } from "../middleware/multer.js";
 
@@ -14,5 +14,6 @@ userRouter.get("/appointments", authUser, listAppointment);
 userRouter.post("/cancel-appointment", authUser, cancelAppointment);
 userRouter.delete("/delete-appointment/:id", authUser, deleteAppointmentHistory);
 userRouter.post("/pay-cash", authUser, payCash);
+userRouter.get("/doctor/:doctorId", getDoctorById);
 
 export default userRouter;

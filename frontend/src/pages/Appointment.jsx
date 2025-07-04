@@ -17,9 +17,21 @@ const Appointment = () => {
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState("");
   
-  const fetchDocInfo = () => {
-    const docInfo = doctors.find((doc) => doc._id === docId);
-    setDocInfo(docInfo);
+  // Modify the fetchDocInfo function to get fresh data from the server instead of local cache
+  const fetchDocInfo = async () => {
+    try {
+      // First try to get from context (for initial load)
+      const cachedDoc = doctors.find((doc) => doc._id === docId);
+      setDocInfo(cachedDoc);
+      
+      // Then fetch fresh data from the server to ensure we have the latest slots_booked
+      const { data } = await axios.get(`${backendUrl}/api/user/doctor/${docId}`);
+      if (data.success && data.doctor) {
+        setDocInfo(data.doctor);
+      }
+    } catch (error) {
+      console.error("Error fetching doctor info:", error);
+    }
   };
 
   
@@ -71,6 +83,7 @@ const Appointment = () => {
     setDocSlots(allSlots);
   };
 
+  // Modify the handleBookAppointment function to fetch fresh data after booking
   const handleBookAppointment = async () => {
     if (!token) {
       toast.error("Please login to book an appointment");
@@ -106,22 +119,14 @@ const Appointment = () => {
       if (response.data.success) {
         toast.success(response.data.message);
         setSlotTime("");
-
-        // Update local state to reflect the new booking
-        const updatedSlotsBooked = {
-          ...docInfo.slots_booked,
-          [selectedSlot.date]: docInfo.slots_booked[selectedSlot.date]
-            ? [...docInfo.slots_booked[selectedSlot.date], slotTime.toLowerCase()]
-            : [slotTime.toLowerCase()],
-        };
-
-        setDocInfo((prevDocInfo) => ({
-          ...prevDocInfo,
-          slots_booked: updatedSlotsBooked,
-        }));
-
-        await getAvailableSlots(); // Refresh slots with updated availability
-        navigate("/my-appointment");
+        
+        // Get fresh doctor data with updated availability after booking
+        await fetchDocInfo();
+        
+        // Navigate after a small delay to ensure the doctor data is refreshed
+        setTimeout(() => {
+          navigate("/my-appointment");
+        }, 500);
       } else {
         toast.error(response.data.message);
       }

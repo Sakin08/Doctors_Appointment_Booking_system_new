@@ -326,4 +326,26 @@ const payCash = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, deleteAppointmentHistory, payCash };
+// Function to get a single doctor by ID
+const getDoctorById = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    
+    if (!doctorId) {
+      return res.status(400).json({ success: false, message: "Doctor ID is required" });
+    }
+    
+    const doctor = await doctorModel.findById(doctorId).select('-password -email');
+    
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
+    }
+    
+    res.json({ success: true, doctor });
+  } catch (error) {
+    console.error("Error fetching doctor:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch doctor: " + error.message });
+  }
+};
+
+export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, deleteAppointmentHistory, payCash, getDoctorById };
