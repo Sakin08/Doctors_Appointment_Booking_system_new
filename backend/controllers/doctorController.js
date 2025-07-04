@@ -15,7 +15,36 @@ const changeAvailablity=async(req,res)=>{
             return res.json({success: false, message: 'Doctor not found'});
         }
 
-        await doctorModel.findByIdAndUpdate(docId, {available: !docData.available});
+        // Update the doctor's availability
+        const newAvailability = !docData.available;
+        const updatedDoctor = await doctorModel.findByIdAndUpdate(docId, 
+            {available: newAvailability}, 
+            {new: true}
+        ).select('-password');
+
+        // Update the doctor's availability status in all related appointments
+        try {
+            const doctorInfoForAppointments = { ...updatedDoctor.toObject() };
+            delete doctorInfoForAppointments.password;
+            delete doctorInfoForAppointments.slots_booked;
+            
+            // Update all appointments that contain this doctor's data
+            await appointmentModel.updateMany(
+                { docId: docId },
+                { 
+                    $set: { 
+                        "docData.available": newAvailability
+                    } 
+                }
+            );
+            
+            console.log(`Updated doctor availability in all related appointments for doctor ID: ${docId}`);
+        } catch (appointmentUpdateError) {
+            console.error('Error updating doctor availability in appointments:', appointmentUpdateError);
+            // We don't want to fail the availability update if appointment updates fail
+            // Just log the error
+        }
+
         res.json({success:true, message:'Availability updated successfully'});
     }catch(error){
         console.log(error);
@@ -166,6 +195,30 @@ const updateDoctorProfile = async (req, res) => {
                 success: false,
                 message: "Doctor not found"
             });
+        }
+
+        // Update doctor data in all appointments
+        try {
+            const doctorInfoForAppointments = { ...updatedDoctor.toObject() };
+            delete doctorInfoForAppointments.password;
+            delete doctorInfoForAppointments.slots_booked;
+            
+            // Update all appointments that contain this doctor's data
+            await appointmentModel.updateMany(
+                { docId: req.doctorId },
+                { 
+                    $set: { 
+                        docData: doctorInfoForAppointments,
+                        amount: fees // Update the fee in case it changed
+                    } 
+                }
+            );
+            
+            console.log(`Updated doctor info in all related appointments for doctor ID: ${req.doctorId}`);
+        } catch (appointmentUpdateError) {
+            console.error('Error updating doctor data in appointments:', appointmentUpdateError);
+            // We don't want to fail the profile update if appointment updates fail
+            // Just log the error
         }
 
         res.json({
