@@ -37,9 +37,10 @@ const Footer = () => {
           <ul className="space-y-2 text-sm">
             {[
               { label: 'Home', path: '/' },
+              {label:'my-appoinement',path:'my-appointment'},
               { label: 'About us', path: '/about' },
               { label: 'Contact us', path: '/contact' },
-              { label: 'Privacy policy', path: '/privacy-policy' },
+              
             ].map((link, index) => (
               <li key={index}>
                 <Link

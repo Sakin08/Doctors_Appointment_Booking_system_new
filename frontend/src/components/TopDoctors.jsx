@@ -20,7 +20,7 @@ const TopDoctors = () => {
         transition={{ duration: 0.6 }}
         className="text-4xl font-extrabold text-blue-900 mb-4 text-center tracking-wide"
       >
-        Most Experienced Doctors
+        Our Top Doctors
       </motion.h1>
 
       <motion.p
