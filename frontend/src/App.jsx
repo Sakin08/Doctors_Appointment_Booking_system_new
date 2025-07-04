@@ -15,6 +15,9 @@ import Login from './pages/Login'
 import Appointment from './pages/Appointment'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFail from "./pages/PaymentFail";
+import PaymentCancel from "./pages/PaymentCancel";
 
 const App = () => {
   return (
@@ -34,6 +37,9 @@ const App = () => {
           <Route path="/doctors/:speciality" element={<Doctors />} />
           <Route path="/my-profile" element={<MyProfile />} />
           <Route path="/my-appointment" element={<MyAppointment />} />
+           <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-fail" element={<PaymentFail />} />
+
           <Route path="/appointment-history" element={<AppointmentHistory />} />
           <Route path="/login" element={<Login />} />
           <Route path="/appointment/:docId" element={<Appointment />} />

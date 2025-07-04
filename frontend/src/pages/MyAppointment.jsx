@@ -54,17 +54,6 @@ const MyAppointment = () => {
     }
   };
 
-  const formatAppointmentDate = (dateString) => {
-    const [day, month, year] = dateString.split('_');
-    const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
   const handleCashPayment = async (appointmentId) => {
     const confirmPay = window.confirm("Confirm payment with cash?");
     if (!confirmPay) return;
@@ -75,21 +64,23 @@ const MyAppointment = () => {
         { appointmentId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       if (data.success) {
         toast.success(data.message || "Payment recorded successfully");
-        setAppointments(prev => 
-          prev.map(apt => 
-            apt._id === appointmentId ? { 
-              ...apt, 
-              payment: true,
-              paymentMethod: 'cash',
-              paymentInfo: {
-                method: 'cash',
-                recordedAt: new Date(),
-                recordedBy: 'user'
-              }
-            } : apt
+        setAppointments(prev =>
+          prev.map(apt =>
+            apt._id === appointmentId
+              ? {
+                  ...apt,
+                  payment: true,
+                  paymentMethod: 'cash',
+                  paymentInfo: {
+                    method: 'cash',
+                    recordedAt: new Date(),
+                    recordedBy: 'user',
+                  },
+                }
+              : apt
           )
         );
       } else {
@@ -99,6 +90,40 @@ const MyAppointment = () => {
       console.error("Cash payment error:", error);
       toast.error(error.response?.data?.message || "Failed to record payment");
     }
+  };
+
+  const handleOnlinePayment = async (appointment) => {
+    const confirmPay = window.confirm("Proceed to pay online for this appointment?");
+    if (!confirmPay) return;
+
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/payment/init`, {
+        name: appointment.userData?.name || "Patient",
+        email: appointment.userData?.email || "test@example.com",
+        phone: appointment.userData?.phone || "01811497418",
+        amount: appointment.fee || 500,
+      });
+
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      } else {
+        toast.error("Failed to initiate online payment");
+      }
+    } catch (error) {
+      console.error("Online payment error:", error);
+      toast.error(error.response?.data?.message || "Payment initiation failed");
+    }
+  };
+
+  const formatAppointmentDate = (dateString) => {
+    const [day, month, year] = dateString.split('_');
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   };
 
   const getStatusBadgeClass = (status) => {
@@ -153,14 +178,16 @@ const MyAppointment = () => {
                   transition={{ duration: 0.3 }}
                   className="relative bg-gradient-to-br from-white via-blue-50 to-blue-100 border border-blue-200 rounded-2xl shadow-md hover:shadow-2xl p-6 flex flex-col sm:flex-row gap-4 sm:gap-6"
                 >
-                  {/* Status Badge */}
                   <div className="absolute top-4 right-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusBadgeClass(item.status)} capitalize`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusBadgeClass(
+                        item.status
+                      )} capitalize`}
+                    >
                       {item.status}
                     </span>
                   </div>
 
-                  {/* Image */}
                   <div className="shrink-0 mx-auto sm:mx-0 w-24 h-24">
                     <img
                       src={item.docData.image}
@@ -175,7 +202,6 @@ const MyAppointment = () => {
                     />
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 text-center sm:text-left space-y-2">
                     <h3 className="text-xl font-semibold text-gray-800">{item.docData.name}</h3>
                     <p className="text-indigo-600 font-medium">{item.docData.speciality}</p>
@@ -185,62 +211,71 @@ const MyAppointment = () => {
                       <p>{item.docData.address.line2}</p>
                     </div>
                     <div className="mt-3 text-sm flex flex-wrap justify-center sm:justify-start items-center gap-2 text-gray-600 font-medium">
-                      <span className="flex items-center gap-1">
-                        📅 {formatAppointmentDate(item.slotDate)}
-                      </span>
+                      <span className="flex items-center gap-1">📅 {formatAppointmentDate(item.slotDate)}</span>
                       <span className="text-gray-400">|</span>
-                      <span className="flex items-center gap-1">
-                        ⏰ {item.slotTime}
-                      </span>
+                      <span className="flex items-center gap-1">⏰ {item.slotTime}</span>
                     </div>
 
                     {item.status === 'cancelled' && (
-                      <p className="text-red-600 text-sm font-medium mt-2">
-                        This appointment has been cancelled
-                      </p>
+                      <p className="text-red-600 text-sm font-medium mt-2">This appointment has been cancelled</p>
                     )}
                     {item.status === 'completed' && (
-                      <p className="text-green-600 text-sm font-medium mt-2">
-                        Appointment completed successfully
-                      </p>
+                      <p className="text-green-600 text-sm font-medium mt-2">Appointment completed successfully</p>
                     )}
                     {item.status === 'confirmed' && (
-                      <p className="text-blue-600 text-sm font-medium mt-2">
-                        Appointment confirmed by doctor
-                      </p>
+                      <p className="text-blue-600 text-sm font-medium mt-2">Appointment confirmed by doctor</p>
                     )}
                     {item.status === 'missed' && (
-                      <p className="text-orange-600 text-sm font-medium mt-2">
-                        Appointment was missed
-                      </p>
+                      <p className="text-orange-600 text-sm font-medium mt-2">Appointment was missed</p>
                     )}
-                    
-                    {/* Payment Status */}
+
                     {item.payment && (
                       <div className="mt-3 flex items-center">
                         <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full border border-green-200 flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3 mr-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
                           </svg>
                           PAID
                         </span>
                         <span className="ml-2 text-gray-600 text-sm">
-                          {item.paymentMethod === 'cash' ? 'Cash payment' : 
-                           item.paymentMethod ? `Paid via ${item.paymentMethod}` : 
-                           ' CASH Payment '}
+                          {item.paymentMethod === 'cash'
+                            ? 'Cash payment'
+                            : item.paymentMethod
+                            ? `Paid via ${item.paymentMethod}`
+                            : 'Online payment'}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Buttons */}
                   <div className="flex sm:flex-col flex-row gap-2 sm:mt-0 mt-4 justify-center sm:justify-end items-center">
                     {!item.payment && item.status === 'pending' && (
-                      <button  
-                        onClick={() => handleCashPayment(item._id)}
-                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm shadow-md transition">
-                        Pay Cash
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleCashPayment(item._id)}
+                          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm shadow-md transition"
+                        >
+                          Pay Cash
+                        </button>
+
+                        <button
+                          onClick={() => handleOnlinePayment(item)}
+                          className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-full text-sm shadow-md transition"
+                        >
+                          Pay Online
+                        </button>
+                      </>
                     )}
                     {item.status === 'pending' && (
                       <button
@@ -259,7 +294,13 @@ const MyAppointment = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-16 w-16 mx-auto text-gray-400 mb-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 <p className="text-gray-500 text-lg">No appointments found</p>
