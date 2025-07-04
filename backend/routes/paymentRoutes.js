@@ -17,12 +17,11 @@ router.route('/success/:tran_id')
   .get(paymentSuccess);
 
 router.route('/fail')
-  .get(paymentFail)
-  .post(paymentFail);
+  .post(paymentFail)
+  .get(paymentFail);
 
 router.route('/cancel')
-  .get(paymentCancel)
-  .post(paymentCancel);
-
+  .post(paymentCancel)
+  .get(paymentCancel);
 
 export default router;

@@ -1,4 +1,3 @@
-// imports same as before
 import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";
@@ -20,9 +19,9 @@ const AppointmentHistory = () => {
         const historicalAppointments = data.appointments
           .filter(apt => apt.status !== 'pending' || apt.isConfirmed)
           .sort((a, b) => {
-            const [dayA, monthA, yearA] = a.slotDate.split('_');
-            const [dayB, monthB, yearB] = b.slotDate.split('_');
-            return new Date(yearB, monthB - 1, dayB) - new Date(yearA, monthA - 1, dayA);
+            const [d1, m1, y1] = a.slotDate.split('_');
+            const [d2, m2, y2] = b.slotDate.split('_');
+            return new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1);
           });
         setAppointments(historicalAppointments);
       } else {
@@ -84,7 +83,7 @@ const AppointmentHistory = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
-      <h2 className="text-3xl sm:text-4xl font-bold mb-10 text-center text-gray-800 underline underline-offset-8 decoration-indigo-500">
+      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-10 text-center text-gray-800 underline underline-offset-8 decoration-indigo-500">
         Appointment History
       </h2>
 
@@ -93,12 +92,12 @@ const AppointmentHistory = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-6">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {appointments.length > 0 ? (
             appointments.map((item) => (
               <div
                 key={item._id}
-                className="relative bg-white border border-blue-100 rounded-xl shadow-md p-5 flex flex-col sm:flex-row gap-4 hover:shadow-xl transition-all duration-300"
+                className="relative bg-white border border-blue-100 rounded-xl shadow-md p-5 flex flex-col gap-4 hover:shadow-xl transition-all duration-300"
               >
                 {/* Delete Button */}
                 <button
@@ -117,7 +116,7 @@ const AppointmentHistory = () => {
                 </button>
 
                 {/* Image */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 mx-auto sm:mx-0">
+                <div className="w-20 h-20 mx-auto">
                   <img
                     src={item.docData.image}
                     alt={item.docData.name}
@@ -128,24 +127,21 @@ const AppointmentHistory = () => {
                 </div>
 
                 {/* Details */}
-                <div className="flex-1 text-center sm:text-left">
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{item.docData.name}</h3>
-                  <p className="text-indigo-600 text-sm font-medium">{item.docData.speciality}</p>
-                  <p className="mt-1 text-sm text-gray-700 truncate">{item.docData.address.line1}</p>
-                  <p className="text-sm text-gray-500 truncate">{item.docData.address.line2}</p>
-
-                  <div className="mt-3 flex flex-wrap justify-center sm:justify-start items-center gap-2 text-sm text-gray-600">
+                <div className="text-center space-y-1">
+                  <h3 className="text-lg font-semibold text-gray-800">{item.docData.name}</h3>
+                  <p className="text-indigo-600 text-sm">{item.docData.speciality}</p>
+                  <p className="text-gray-700 text-sm">{item.docData.address.line1}</p>
+                  <p className="text-gray-500 text-sm">{item.docData.address.line2}</p>
+                  <div className="text-sm text-gray-600 mt-2">
                     📅 {formatDate(item.slotDate)} <span className="text-gray-400">|</span> ⏰ {item.slotTime}
                   </div>
-
-                  <div className="mt-3">{item.status && <span className={getStatusStyle(item.status)}>{item.status}</span>}</div>
-
-                  <div className="mt-3 text-sm">
+                  <div className="mt-2">{item.status && <span className={getStatusStyle(item.status)}>{item.status}</span>}</div>
+                  <div className="mt-2 text-sm">
                     <span className={`inline-flex items-center px-3 py-1 rounded-full ${
                       item.payment ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                     }`}>
                       💳 {item.payment ? 
-                          (item.paymentMethod === 'cash' ? "Paid with Cash" : 
+                          (item.paymentMethod === 'cash' ? "will Pay with Cash" : 
                            item.paymentMethod ? `Paid via ${item.paymentMethod}` : "Payment Completed") 
                           : "Unpaid"}
                     </span>
@@ -154,7 +150,7 @@ const AppointmentHistory = () => {
               </div>
             ))
           ) : (
-            <div className="col-span-2 text-center py-12">
+            <div className="col-span-full text-center py-12">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>

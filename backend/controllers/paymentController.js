@@ -1,21 +1,29 @@
 import SSLCommerzPayment from "sslcommerz-lts";
+import dotenv from "dotenv";
+import appointmentModel from "../models/appointmentModel.js";
 
-const store_id = "sakin685442aa87347";
-const store_passwd = "sakin685442aa87347@ssl";
-const is_live = false; // use sandbox
+dotenv.config();
+
+const {
+  SSLCZ_STORE_ID,
+  SSLCZ_STORE_PASS,
+  SSLCZ_IS_LIVE,
+  BACKEND_URL,
+  FRONTEND_URL,
+} = process.env;
 
 export const initPayment = async (req, res) => {
-  const { name, email, phone, amount } = req.body;
+  const { name, email, phone, amount, appointmentId } = req.body;
 
   const tran_id = `txn_${Math.floor(Math.random() * 1000000000)}`;
   const data = {
     total_amount: amount || 500,
     currency: "BDT",
     tran_id,
-    success_url: `http://localhost:4000/api/payment/success/${tran_id}`,
-    fail_url: "http://localhost:4000/api/payment/fail",
-    cancel_url: "http://localhost:4000/api/payment/cancel",
-    ipn_url: "http://localhost:4000/api/payment/ipn",
+    success_url: `${BACKEND_URL}/api/payment/success/${tran_id}`,
+    fail_url: `${BACKEND_URL}/api/payment/fail`,
+    cancel_url: `${BACKEND_URL}/api/payment/cancel`,
+    ipn_url: `${BACKEND_URL}/api/payment/ipn`,
     shipping_method: "NO",
     product_name: "Doctor Appointment",
     product_category: "Healthcare",
@@ -33,7 +41,19 @@ export const initPayment = async (req, res) => {
   };
 
   try {
-    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+    // Store the transaction ID in the appointment record first
+    if (appointmentId) {
+      const appointment = await appointmentModel.findById(appointmentId);
+      if (appointment) {
+        if (!appointment.paymentInfo) {
+          appointment.paymentInfo = {};
+        }
+        appointment.paymentInfo.tran_id = tran_id;
+        await appointment.save();
+      }
+    }
+    
+    const sslcz = new SSLCommerzPayment(SSLCZ_STORE_ID, SSLCZ_STORE_PASS, SSLCZ_IS_LIVE === 'true');
     const apiResponse = await sslcz.init(data);
 
     if (apiResponse?.GatewayPageURL) {
@@ -50,21 +70,50 @@ export const initPayment = async (req, res) => {
 export const paymentSuccess = async (req, res) => {
   const { tran_id } = req.params;
 
-  // TODO: mark appointment as paid in database based on tran_id or session key
+  try {
+    // Find the appointment by transaction ID (stored in paymentInfo)
+    const appointment = await appointmentModel.findOne({
+      "paymentInfo.tran_id": tran_id
+    });
 
-  return res.redirect("http://localhost:5173/payment-success"); // frontend thank-you page
+    if (appointment) {
+      // Update the appointment payment status
+      appointment.payment = true;
+      appointment.paymentMethod = "online";
+      
+      // If paymentInfo doesn't exist yet, create it
+      if (!appointment.paymentInfo) {
+        appointment.paymentInfo = {};
+      }
+      
+      // Store transaction info
+      appointment.paymentInfo.tran_id = tran_id;
+      appointment.paymentInfo.paid_at = new Date();
+      
+      await appointment.save();
+      console.log("✅ Payment successful. Transaction ID:", tran_id, "Appointment updated");
+    } else {
+      console.log("✅ Payment successful but no matching appointment found. Transaction ID:", tran_id);
+    }
+
+    res.redirect(`${FRONTEND_URL}/payment-success`);
+  } catch (error) {
+    console.error("Error updating appointment payment status:", error);
+    res.redirect(`${FRONTEND_URL}/payment-success`);
+  }
 };
 
 export const paymentFail = (req, res) => {
-  return res.redirect("http://localhost:5173/payment-fail");
+  console.log("❌ Payment failed");
+  res.redirect(`${FRONTEND_URL}/payment-fail`);
 };
 
 export const paymentCancel = (req, res) => {
-  return res.redirect("http://localhost:5173/payment-cancel");
+  console.log("❌ Payment canceled");
+  res.redirect(`${FRONTEND_URL}/payment-cancel`);
 };
 
 export const paymentIPN = (req, res) => {
-  // IPN (Instant Payment Notification) handling (optional)
-  console.log("IPN received:", req.body);
+  console.log("📩 IPN received:", req.body);
   res.status(200).json({ status: "received" });
 };

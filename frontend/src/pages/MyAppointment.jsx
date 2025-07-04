@@ -101,7 +101,8 @@ const MyAppointment = () => {
         name: appointment.userData?.name || "Patient",
         email: appointment.userData?.email || "test@example.com",
         phone: appointment.userData?.phone || "01811497418",
-        amount: appointment.fee || 500,
+        amount: appointment.amount || 500,
+        appointmentId: appointment._id
       });
 
       if (data?.url) {
