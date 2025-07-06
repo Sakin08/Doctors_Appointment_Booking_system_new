@@ -12,6 +12,7 @@ const {
   FRONTEND_URL,
 } = process.env;
 
+// Function to get backend URL
 const getBackendUrl = (req) => {
   try {
     if (req?.headers?.host && !req.headers.host.includes('localhost')) {
@@ -21,24 +22,30 @@ const getBackendUrl = (req) => {
   } catch (error) {
     console.error("Error detecting backend URL:", error.message);
   }
+
   return BACKEND_URL || 'http://localhost:4000';
 };
 
+// Function to get frontend URL
 const getFrontendUrl = (req) => {
   try {
     const origin = req.headers?.origin || req.headers?.referer || '';
+
     if (origin.startsWith('http') && !origin.includes('localhost')) {
       return new URL(origin).origin;
     }
+
     if (req?.headers?.host && !req.headers.host.includes('localhost')) {
       return `https://${req.headers.host.replace(/^api\./, '')}`;
     }
   } catch (error) {
     console.error("Error detecting frontend URL:", error.message);
   }
+
   return FRONTEND_URL || 'http://localhost:5173';
 };
 
+// Initiate Payment
 export const initPayment = async (req, res) => {
   const { name, email, phone, amount, appointmentId } = req.body;
 
@@ -75,6 +82,8 @@ export const initPayment = async (req, res) => {
       cus_fax: "N/A",
     };
 
+    console.log("🚀 SSLCommerz Payment URLs:", data);
+
     if (appointmentId) {
       const appointment = await appointmentModel.findById(appointmentId);
       if (appointment) {
@@ -97,6 +106,7 @@ export const initPayment = async (req, res) => {
   }
 };
 
+// Payment Success
 export const paymentSuccess = async (req, res) => {
   const { tran_id, appointmentId } = req.params;
   const frontendUrl = getFrontendUrl(req);
@@ -125,76 +135,7 @@ export const paymentSuccess = async (req, res) => {
       console.warn("⚠️ Payment success but appointment not found.");
     }
 
-    return res.send(`
-      <html>
-        <head>
-          <title>Payment Success</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              background-color: #e6f4ea;
-              color: #2e7d32;
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              margin: 0;
-              padding: 20px;
-              text-align: center;
-            }
-            h1 {
-              font-size: 3rem;
-              margin-bottom: 12px;
-              text-shadow: 1px 1px 4px rgba(46, 125, 50, 0.4);
-            }
-            p {
-              font-size: 1.3rem;
-              margin-bottom: 30px;
-              max-width: 400px;
-            }
-            button {
-              background-color: #4caf50;
-              color: white;
-              padding: 14px 28px;
-              font-size: 1.1rem;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              box-shadow: 0 4px 8px rgba(76, 175, 80, 0.5);
-              transition: background-color 0.3s ease, box-shadow 0.3s ease;
-              user-select: none;
-            }
-            button:hover {
-              background-color: #388e3c;
-              box-shadow: 0 6px 12px rgba(56, 142, 60, 0.7);
-            }
-            @media (max-width: 480px) {
-              h1 {
-                font-size: 2.2rem;
-              }
-              p {
-                font-size: 1.1rem;
-                max-width: 90%;
-              }
-              button {
-                width: 100%;
-                padding: 16px 0;
-                font-size: 1.2rem;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Payment Successful! 🎉</h1>
-          <p>Your payment was processed successfully.</p>
-          <button onclick="window.location.href='${frontendUrl}/my-appointment'">
-            Go to My Appointments
-          </button>
-        </body>
-      </html>
-    `);
+    return res.redirect(`${frontendUrl}/payment-success`);
   } catch (error) {
     console.error("❌ Error processing payment success:", error.message);
     return res.redirect(`${frontendUrl}/payment-success`);
@@ -202,82 +143,10 @@ export const paymentSuccess = async (req, res) => {
 };
 
 export const paymentFail = (req, res) => {
-  const frontendUrl = getFrontendUrl(req); // Make sure this function is defined correctly
-
   console.log("❌ Payment failed");
-
-  return res.send(`
-    <html>
-      <head>
-        <title>Payment Failed</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <style>
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #fff5f5;
-            color: #b00020;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-          }
-          h1 {
-            font-size: 3rem;
-            margin-bottom: 12px;
-            text-shadow: 1px 1px 3px rgba(176, 0, 32, 0.4);
-          }
-          p {
-            font-size: 1.25rem;
-            margin-bottom: 30px;
-            max-width: 400px;
-          }
-          a.button {
-            display: inline-block;
-            background-color: #b00020;
-            color: white;
-            padding: 14px 28px;
-            font-size: 1.1rem;
-            text-decoration: none;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(176, 0, 32, 0.4);
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-            user-select: none;
-          }
-          a.button:hover {
-            background-color: #d32f2f;
-            box-shadow: 0 6px 12px rgba(211, 47, 47, 0.6);
-          }
-          @media (max-width: 480px) {
-            h1 {
-              font-size: 2.2rem;
-            }
-            p {
-              font-size: 1.1rem;
-              max-width: 90%;
-            }
-            a.button {
-              width: 100%;
-              padding: 16px 0;
-              font-size: 1.2rem;
-              display: block;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <h1>❌ Payment Failed</h1>
-        <p>Unfortunately, your payment could not be completed. Please try again or contact support if the issue persists.</p>
-        <a class="button" href="${frontendUrl}/appointments">Go to My Appointments</a>
-      </body>
-    </html>
-  `);
+  const frontendUrl = getFrontendUrl(req);
+  res.redirect(`${frontendUrl}/payment-fail`);
 };
-
-
 
 export const paymentCancel = (req, res) => {
   console.log("❌ Payment canceled");
