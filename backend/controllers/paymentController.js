@@ -129,19 +129,61 @@ export const paymentSuccess = async (req, res) => {
       <html>
         <head>
           <title>Payment Success</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
           <style>
-            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-            button {
-              padding: 12px 24px;
-              font-size: 18px;
-              cursor: pointer;
-              background-color: #4CAF50;
-              color: white;
-              border: none;
-              border-radius: 5px;
-              margin-top: 20px;
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              background-color: #e6f4ea;
+              color: #2e7d32;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              padding: 20px;
+              text-align: center;
             }
-            button:hover { background-color: #45a049; }
+            h1 {
+              font-size: 3rem;
+              margin-bottom: 12px;
+              text-shadow: 1px 1px 4px rgba(46, 125, 50, 0.4);
+            }
+            p {
+              font-size: 1.3rem;
+              margin-bottom: 30px;
+              max-width: 400px;
+            }
+            button {
+              background-color: #4caf50;
+              color: white;
+              padding: 14px 28px;
+              font-size: 1.1rem;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              box-shadow: 0 4px 8px rgba(76, 175, 80, 0.5);
+              transition: background-color 0.3s ease, box-shadow 0.3s ease;
+              user-select: none;
+            }
+            button:hover {
+              background-color: #388e3c;
+              box-shadow: 0 6px 12px rgba(56, 142, 60, 0.7);
+            }
+            @media (max-width: 480px) {
+              h1 {
+                font-size: 2.2rem;
+              }
+              p {
+                font-size: 1.1rem;
+                max-width: 90%;
+              }
+              button {
+                width: 100%;
+                padding: 16px 0;
+                font-size: 1.2rem;
+              }
+            }
           </style>
         </head>
         <body>
@@ -159,11 +201,81 @@ export const paymentSuccess = async (req, res) => {
   }
 };
 
+
 export const paymentFail = (req, res) => {
   console.log("❌ Payment failed");
-  const frontendUrl = getFrontendUrl(req);
-  res.redirect(`${frontendUrl}/payment-fail`);
+  return res.send(`
+    <html>
+      <head>
+        <title>Payment Failed</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fff5f5;
+            color: #b00020;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+          }
+          h1 {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            text-shadow: 1px 1px 3px rgba(176, 0, 32, 0.4);
+          }
+          p {
+            font-size: 1.25rem;
+            margin-bottom: 30px;
+            max-width: 400px;
+          }
+          a.button {
+            display: inline-block;
+            background-color: #b00020;
+            color: white;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            text-decoration: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(176, 0, 32, 0.4);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            user-select: none;
+          }
+          a.button:hover {
+            background-color: #d32f2f;
+            box-shadow: 0 6px 12px rgba(211, 47, 47, 0.6);
+          }
+          @media (max-width: 480px) {
+            h1 {
+              font-size: 2.2rem;
+            }
+            p {
+              font-size: 1.1rem;
+              max-width: 90%;
+            }
+            a.button {
+              width: 100%;
+              padding: 16px 0;
+              font-size: 1.2rem;
+              display: block;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>❌ Payment Failed</h1>
+        <p>Unfortunately, your payment was not successful. Please try again or contact support if the issue persists.</p>
+        <a href="https://medicare-seven-sigma.vercel.app/my-appointment" class="button">Go to My Appointments</a>
+      </body>
+    </html>
+  `);
 };
+
+
 
 export const paymentCancel = (req, res) => {
   console.log("❌ Payment canceled");
