@@ -91,27 +91,28 @@ const MyAppointment = () => {
   };
 
   const handleOnlinePayment = async (appointment) => {
-    const confirmPay = window.confirm("Proceed to pay online for this appointment?");
-    if (!confirmPay) return;
+  const confirmPay = window.confirm("Proceed to pay online for this appointment?");
+  if (!confirmPay) return;
 
-    try {
-      const { data } = await axios.post(`${backendUrl}/api/payment/init`, {
-        name: appointment.userData?.name || "Patient",
-        email: appointment.userData?.email || "test@example.com",
-        phone: appointment.userData?.phone || "01811497418",
-        amount: appointment.amount || 500,
-        appointmentId: appointment._id
-      });
+  try {
+    const { data } = await axios.post(`${backendUrl}/api/payment/init`, {
+      name: appointment.userData?.name || "Patient",
+      email: appointment.userData?.email || "test@example.com",
+      phone: appointment.userData?.phone || "01811497418",
+      amount: appointment.amount || 500,
+      appointmentId: appointment._id
+    });
 
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      } else {
-        toast.error("Failed to initiate online payment");
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Payment initiation failed");
+    if (data?.url) {
+      window.location.href = data.url; // <-- redirects in the same tab
+    } else {
+      toast.error("Failed to initiate online payment");
     }
-  };
+  } catch (error) {
+    toast.error(error.response?.data?.message || "Payment initiation failed");
+  }
+};
+
 
   const formatAppointmentDate = (dateString) => {
     const [day, month, year] = dateString.split('_');

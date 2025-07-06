@@ -189,7 +189,7 @@ export const paymentSuccess = async (req, res) => {
         <body>
           <h1>Payment Successful! 🎉</h1>
           <p>Your payment was processed successfully.</p>
-          <button onclick="window.location.href='https://medicare-seven-sigma.vercel.app/my-appointment'">
+          <button onclick="window.location.href='${frontendUrl}/my-appointment'">
             Go to My Appointments
           </button>
         </body>
@@ -201,9 +201,11 @@ export const paymentSuccess = async (req, res) => {
   }
 };
 
-
 export const paymentFail = (req, res) => {
+  const frontendUrl = getFrontendUrl(req); // Make sure this function is defined correctly
+
   console.log("❌ Payment failed");
+
   return res.send(`
     <html>
       <head>
@@ -267,12 +269,10 @@ export const paymentFail = (req, res) => {
         </style>
       </head>
       <body>
-          <h1>❌ Payment Failed</h1>
-          <p>Your payment was processed successfully.</p>
-          <button onclick="window.location.href='https://medicare-seven-sigma.vercel.app/my-appointment'">
-            Go to My Appointments
-          </button>
-        </body>
+        <h1>❌ Payment Failed</h1>
+        <p>Unfortunately, your payment could not be completed. Please try again or contact support if the issue persists.</p>
+        <a class="button" href="${frontendUrl}/appointments">Go to My Appointments</a>
+      </body>
     </html>
   `);
 };
