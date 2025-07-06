@@ -267,10 +267,12 @@ export const paymentFail = (req, res) => {
         </style>
       </head>
       <body>
-        <h1>❌ Payment Failed</h1>
-        <p>Unfortunately, your payment was not successful. Please try again or contact support if the issue persists.</p>
-        <a href="https://medicare-online-olive.vercel.app/my-appointment" class="button">Go to My Appointments</a>
-      </body>
+          <h1>❌ Payment Failed</h1>
+          <p>Your payment was processed successfully.</p>
+          <button onclick="window.location.href='https://medicare-seven-sigma.vercel.app/my-appointment'">
+            Go to My Appointments
+          </button>
+        </body>
     </html>
   `);
 };
