@@ -12,7 +12,6 @@ const {
   FRONTEND_URL,
 } = process.env;
 
-// Function to get backend URL
 const getBackendUrl = (req) => {
   try {
     if (req?.headers?.host && !req.headers.host.includes('localhost')) {
@@ -22,30 +21,24 @@ const getBackendUrl = (req) => {
   } catch (error) {
     console.error("Error detecting backend URL:", error.message);
   }
-
   return BACKEND_URL || 'http://localhost:4000';
 };
 
-// Function to get frontend URL
 const getFrontendUrl = (req) => {
   try {
     const origin = req.headers?.origin || req.headers?.referer || '';
-
     if (origin.startsWith('http') && !origin.includes('localhost')) {
       return new URL(origin).origin;
     }
-
     if (req?.headers?.host && !req.headers.host.includes('localhost')) {
       return `https://${req.headers.host.replace(/^api\./, '')}`;
     }
   } catch (error) {
     console.error("Error detecting frontend URL:", error.message);
   }
-
   return FRONTEND_URL || 'http://localhost:5173';
 };
 
-// Initiate Payment
 export const initPayment = async (req, res) => {
   const { name, email, phone, amount, appointmentId } = req.body;
 
@@ -82,8 +75,6 @@ export const initPayment = async (req, res) => {
       cus_fax: "N/A",
     };
 
-    console.log("🚀 SSLCommerz Payment URLs:", data);
-
     if (appointmentId) {
       const appointment = await appointmentModel.findById(appointmentId);
       if (appointment) {
@@ -106,7 +97,6 @@ export const initPayment = async (req, res) => {
   }
 };
 
-// Payment Success
 export const paymentSuccess = async (req, res) => {
   const { tran_id, appointmentId } = req.params;
   const frontendUrl = getFrontendUrl(req);
@@ -135,7 +125,34 @@ export const paymentSuccess = async (req, res) => {
       console.warn("⚠️ Payment success but appointment not found.");
     }
 
-    return res.redirect(`${frontendUrl}/payment-success`);
+    return res.send(`
+      <html>
+        <head>
+          <title>Payment Success</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            button {
+              padding: 12px 24px;
+              font-size: 18px;
+              cursor: pointer;
+              background-color: #4CAF50;
+              color: white;
+              border: none;
+              border-radius: 5px;
+              margin-top: 20px;
+            }
+            button:hover { background-color: #45a049; }
+          </style>
+        </head>
+        <body>
+          <h1>Payment Successful! 🎉</h1>
+          <p>Your payment was processed successfully.</p>
+          <button onclick="window.location.href='https://medicare-seven-sigma.vercel.app/my-appointment'">
+            Go to My Appointments
+          </button>
+        </body>
+      </html>
+    `);
   } catch (error) {
     console.error("❌ Error processing payment success:", error.message);
     return res.redirect(`${frontendUrl}/payment-success`);

@@ -12,16 +12,12 @@ const router = express.Router();
 
 router.post('/init', initPayment);
 router.post('/ipn', paymentIPN);
-
-// Add test route
 router.get('/test-urls', testUrls);
 
-// Original route for backward compatibility
 router.route('/success/:tran_id')
   .post(paymentSuccess)
   .get(paymentSuccess);
 
-// New route with appointmentId
 router.route('/success/:tran_id/:appointmentId')
   .post(paymentSuccess)
   .get(paymentSuccess);
