@@ -402,7 +402,15 @@ const confirmAppointment = async (req, res) => {
             });
         }
 
+        if (!appointment.payment) {
+            return res.json({
+                success: false,
+                message: 'Appointment has not been paid. Cannot confirm.'
+            });
+        }
+
         appointment.isConfirmed = true;
+        appointment.status = 'confirmed'; // Optional for easier status tracking
         await appointment.save();
 
         res.json({ success: true, message: 'Appointment confirmed successfully' });
@@ -411,6 +419,7 @@ const confirmAppointment = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 };
+
 
 const completeAppointment = async (req, res) => {
     try {

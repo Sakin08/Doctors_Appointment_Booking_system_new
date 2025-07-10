@@ -3,6 +3,7 @@ import { assets } from '../assets/assets';
 import { AdminContext } from '../context/AdminContext';
 import { DoctorContext } from '../context/DoctorContext';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const Navbar = ({ onMenuClick }) => {
   const { aToken, setAToken } = useContext(AdminContext);
@@ -20,6 +21,10 @@ const Navbar = ({ onMenuClick }) => {
     navigate('/');
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <header className="bg-white border-b border-gray-300 shadow-sm sticky top-0 z-40">
       <div className="flex items-center justify-between px-4 lg:px-6 py-4">
@@ -31,12 +36,31 @@ const Navbar = ({ onMenuClick }) => {
           >
             <img src={assets.list_icon} alt="Menu" className="w-6 h-6" />
           </button>
-          <div className="flex items-center gap-4">
-            <img src={assets.admin_logo} alt="Logo" className="h-8 w-auto" />
-            <span className="hidden sm:inline px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
-              {aToken ? 'Admin' : 'Doctor'}
-            </span>
-          </div>
+
+          {/* Logo with animation */}
+          <motion.div
+            onClick={() => {
+              navigate('/');
+              scrollToTop();
+            }}
+            className="cursor-pointer select-none"
+            whileHover={{ scale: 1.1 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"
+            >
+              Medi<span className="tracking-wide">Care</span>
+            </motion.span>
+          </motion.div>
+
+          {/* Role badge */}
+          <span className="hidden sm:inline px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
+            {aToken ? 'Admin' : 'Doctor'}
+          </span>
         </div>
 
         {/* Right Side Actions */}
