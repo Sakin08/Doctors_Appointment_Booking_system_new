@@ -38,7 +38,7 @@ const App = () => {
           <Route path="/my-profile" element={<MyProfile />} />
           <Route path="/my-appointment" element={<MyAppointment />} />
            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/payment-fail" element={<PaymentFail />} />
+            <Route path="/payment-failed" element={<PaymentFail />} />
 
           <Route path="/appointment-history" element={<AppointmentHistory />} />
           <Route path="/login" element={<Login />} />
