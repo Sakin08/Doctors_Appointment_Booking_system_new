@@ -56,6 +56,9 @@ export const paymentSuccess = async (req, res) => {
     appointment.payment = true;
     appointment.paymentMethod = 'online';
     appointment.isConfirmed = true;
+    appointment.status = 'pending'; // So it shows in "My Appointments"
+    appointment.isConfirmed = false; // Optional, if you’re using this flag
+
     appointment.paymentInfo = {
       status: 'completed',
       paidAt: new Date(),
