@@ -1,176 +1,78 @@
-import SSLCommerzPayment from "sslcommerz-lts";
-import dotenv from "dotenv";
-import appointmentModel from "../models/appointmentModel.js";
+import SSLCommerzPayment from 'sslcommerz-lts';
+import Appointment from '../models/appointmentModel.js';
 
-dotenv.config();
+const store_id = process.env.SSLCZ_STORE_ID;
+const store_pass = process.env.SSLCZ_STORE_PASS;
+const is_live = process.env.SSLCZ_IS_LIVE === 'true';
 
-const {
-  SSLCZ_STORE_ID,
-  SSLCZ_STORE_PASS,
-  SSLCZ_IS_LIVE,
-  BACKEND_URL,
-  FRONTEND_URL,
-} = process.env;
-
-// Function to get backend URL
-const getBackendUrl = (req) => {
-  try {
-    if (req?.headers?.host && !req.headers.host.includes('localhost')) {
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-      return `${protocol}://${req.headers.host}`;
-    }
-  } catch (error) {
-    console.error("Error detecting backend URL:", error.message);
-  }
-
-  return BACKEND_URL || 'http://localhost:4000';
-};
-
-// Function to get frontend URL
-const getFrontendUrl = (req) => {
-  try {
-    const origin = req.headers?.origin || req.headers?.referer || '';
-
-    if (origin.startsWith('http') && !origin.includes('localhost')) {
-      return new URL(origin).origin;
-    }
-
-    if (req?.headers?.host && !req.headers.host.includes('localhost')) {
-      return `https://${req.headers.host.replace(/^api\./, '')}`;
-    }
-  } catch (error) {
-    console.error("Error detecting frontend URL:", error.message);
-  }
-
-  return FRONTEND_URL || 'http://localhost:5173';
-};
-
-// Initiate Payment
 export const initPayment = async (req, res) => {
-  const { name, email, phone, amount, appointmentId } = req.body;
-
   try {
-    const backendUrl = getBackendUrl(req);
+    const { name, email, phone, amount, appointmentId } = req.body;
+    const tran_id = `TRAN_${Date.now()}`;
 
-    if (!backendUrl.startsWith('http')) {
-      return res.status(500).json({ message: 'Invalid backend URL' });
-    }
-
-    const tran_id = `txn_${Math.floor(Math.random() * 1e9)}`;
+    // Save tran_id to appointment
+    await Appointment.findByIdAndUpdate(appointmentId, { transactionId: tran_id });
 
     const data = {
-      total_amount: amount || 500,
-      currency: "BDT",
+      total_amount: amount,
+      currency: 'BDT',
       tran_id,
-      success_url: `${backendUrl}/api/payment/success/${tran_id}/${appointmentId || ''}`,
-      fail_url: `${backendUrl}/api/payment/fail`,
-      cancel_url: `${backendUrl}/api/payment/cancel`,
-      ipn_url: `${backendUrl}/api/payment/ipn`,
-      shipping_method: "NO",
-      product_name: "Doctor Appointment",
-      product_category: "Healthcare",
-      product_profile: "general",
-      cus_name: name || "Guest",
-      cus_email: email || "test@example.com",
-      cus_add1: "Dhaka",
-      cus_add2: "Dhaka",
-      cus_city: "Dhaka",
-      cus_state: "Dhaka",
-      cus_postcode: "1000",
-      cus_country: "Bangladesh",
-      cus_phone: phone || "01811497418",
-      cus_fax: "N/A",
+      success_url: `${process.env.BACKEND_URL}/api/payment/success/${tran_id}`,
+      fail_url: `${process.env.BACKEND_URL}/api/payment/fail/${tran_id}`,
+      cancel_url: `${process.env.BACKEND_URL}/api/payment/cancel/${tran_id}`,
+      ipn_url: `${process.env.BACKEND_URL}/api/payment/ipn`,
+      shipping_method: 'NO',
+      product_name: 'Doctor Appointment',
+      product_category: 'Healthcare',
+      product_profile: 'general',
+      cus_name: name,
+      cus_email: email,
+      cus_add1: 'Dhaka',
+      cus_city: 'Dhaka',
+      cus_country: 'Bangladesh',
+      cus_phone: phone,
+      ship_name: name,
+      ship_add1: 'Dhaka',
+      ship_city: 'Dhaka',
+      ship_country: 'Bangladesh',
     };
 
-    console.log("🚀 SSLCommerz Payment URLs:", data);
-
-    if (appointmentId) {
-      const appointment = await appointmentModel.findById(appointmentId);
-      if (appointment) {
-        appointment.paymentInfo = { tran_id };
-        await appointment.save();
-      }
-    }
-
-    const sslcz = new SSLCommerzPayment(SSLCZ_STORE_ID, SSLCZ_STORE_PASS, SSLCZ_IS_LIVE === 'true');
+    const sslcz = new SSLCommerzPayment(store_id, store_pass, is_live);
     const apiResponse = await sslcz.init(data);
 
-    if (apiResponse?.GatewayPageURL) {
-      return res.status(200).json({ url: apiResponse.GatewayPageURL });
-    }
-
-    return res.status(500).json({ message: "SSLCommerz payment initiation failed" });
+    return res.status(200).json({ url: apiResponse.GatewayPageURL });
   } catch (error) {
-    console.error("❌ Payment init error:", error.message);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    console.error(error);
+    return res.status(500).json({ error: 'Payment initiation failed' });
   }
 };
 
-// Payment Success
 export const paymentSuccess = async (req, res) => {
-  const { tran_id, appointmentId } = req.params;
-  const frontendUrl = getFrontendUrl(req);
-
   try {
-    let appointment = null;
+    const { tran_id } = req.params;
+    const appointment = await Appointment.findOne({ transactionId: tran_id });
+    if (!appointment) return res.status(404).send('Appointment not found');
 
-    if (appointmentId) {
-      appointment = await appointmentModel.findById(appointmentId);
-    }
+    appointment.payment = true;
+    appointment.paymentMethod = 'online';
+    appointment.isConfirmed = true;
+    appointment.paymentInfo = {
+      status: 'completed',
+      paidAt: new Date(),
+    };
+    await appointment.save();
 
-    if (!appointment) {
-      appointment = await appointmentModel.findOne({ "paymentInfo.tran_id": tran_id });
-    }
-
-    if (appointment) {
-      appointment.payment = true;
-      appointment.paymentMethod = "online";
-      appointment.paymentInfo = {
-        tran_id,
-        paid_at: new Date(),
-      };
-      await appointment.save();
-      console.log("✅ Payment recorded for appointment:", appointmentId || tran_id);
-    } else {
-      console.warn("⚠️ Payment success but appointment not found.");
-    }
-
-    return res.redirect(`${frontendUrl}/payment-success`);
+    return res.redirect(`${process.env.FRONTEND_URL}/payment-success`);
   } catch (error) {
-    console.error("❌ Error processing payment success:", error.message);
-    return res.redirect(`${frontendUrl}/payment-success`);
+    console.error(error);
+    return res.status(500).send('Payment success processing failed');
   }
 };
 
 export const paymentFail = (req, res) => {
-  console.log("❌ Payment failed");
-  const frontendUrl = getFrontendUrl(req);
-  res.redirect(`${frontendUrl}/payment-fail`);
+  return res.redirect(`${process.env.FRONTEND_URL}/payment-failed`);
 };
 
 export const paymentCancel = (req, res) => {
-  console.log("❌ Payment canceled");
-  const frontendUrl = getFrontendUrl(req);
-  res.redirect(`${frontendUrl}/payment-cancel`);
-};
-
-export const paymentIPN = (req, res) => {
-  console.log("📩 IPN received:", req.body);
-  res.status(200).json({ status: "received" });
-};
-
-export const testUrls = (req, res) => {
-  const backendUrl = getBackendUrl(req);
-  const frontendUrl = getFrontendUrl(req);
-
-  return res.status(200).json({
-    backendUrl,
-    frontendUrl,
-    envBackendUrl: BACKEND_URL,
-    envFrontendUrl: FRONTEND_URL,
-    host: req.headers.host,
-    protocol: req.protocol,
-    origin: req.headers.origin || '',
-    referer: req.headers.referer || '',
-  });
+  return res.redirect(`${process.env.FRONTEND_URL}/payment-cancelled`);
 };

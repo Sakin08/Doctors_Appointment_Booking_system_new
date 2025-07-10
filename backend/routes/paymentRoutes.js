@@ -1,40 +1,23 @@
-
-
 import express from 'express';
 import {
   initPayment,
   paymentSuccess,
   paymentFail,
   paymentCancel,
-  paymentIPN,
-  testUrls,
 } from '../controllers/paymentController.js';
 
 const router = express.Router();
 
 router.post('/init', initPayment);
-router.post('/ipn', paymentIPN);
 
-// Add test route
-router.get('/test-urls', testUrls);
+// Accept POST requests for success, fail, cancel
+router.post('/success/:tran_id', paymentSuccess);
+router.post('/fail/:tran_id', paymentFail);
+router.post('/cancel/:tran_id', paymentCancel);
 
-// Original route for backward compatibility
-router.route('/success/:tran_id')
-  .post(paymentSuccess)
-  .get(paymentSuccess);
-
-// New route with appointmentId
-router.route('/success/:tran_id/:appointmentId')
-  .post(paymentSuccess)
-  .get(paymentSuccess);
-
-router.route('/fail')
-  .post(paymentFail)
-  .get(paymentFail);
-
-router.route('/cancel')
-  .post(paymentCancel)
-  .get(paymentCancel);
+// Optionally accept GET too if you want:
+// router.route('/success/:tran_id').get(paymentSuccess).post(paymentSuccess);
+// router.route('/fail/:tran_id').get(paymentFail).post(paymentFail);
+// router.route('/cancel/:tran_id').get(paymentCancel).post(paymentCancel);
 
 export default router;
-
