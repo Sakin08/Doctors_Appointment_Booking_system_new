@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AdminContext } from '../../context/AdminContext';
 
 const DoctorsList = () => {
-  const { doctors, aToken, getAllDoctors, changeAvailability } = useContext(AdminContext);
+  const { doctors, aToken, getAllDoctors, changeAvailability, deleteDoctor } = useContext(AdminContext);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -47,7 +47,7 @@ const DoctorsList = () => {
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">{item.name}</h2>
                 <p className="text-md text-gray-600 mb-4">{item.speciality}</p>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mb-4">
                   <input
                     onChange={() => changeAvailability(item._id)}
                     type="checkbox"
@@ -56,6 +56,29 @@ const DoctorsList = () => {
                   />
                   <p className="text-gray-700">Available</p>
                 </div>
+
+                {/* Delete Button inside each doctor card */}
+                <button
+  onClick={() => {
+    if (window.confirm("Are you sure you want to delete this doctor?")) {
+      deleteDoctor(item._id);
+    }
+  }}
+  className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5 mr-2"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+  </svg>
+  Delete
+</button>
+
               </div>
             </div>
           ))

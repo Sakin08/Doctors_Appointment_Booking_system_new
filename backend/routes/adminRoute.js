@@ -1,5 +1,5 @@
 import express from 'express'
-import { addDoctor, allDoctors, loginAdmin, appointmentAdmin, cancelAppointmentAdmin, deleteAppointment, getDashboardStats } from '../controllers/adminController.js'
+import { addDoctor, allDoctors, loginAdmin, appointmentAdmin, cancelAppointmentAdmin, deleteAppointment, getDashboardStats, deleteDoctor } from '../controllers/adminController.js'
 import upload, { cloudinaryUpload } from '../middleware/multer.js'
 import authAdmin from '../middleware/authAdmin.js'
 import { changeAvailablity } from '../controllers/doctorController.js'
@@ -14,5 +14,6 @@ adminRouter.get('/appointments', authAdmin, appointmentAdmin)
 adminRouter.post('/cancel-appointment', authAdmin, cancelAppointmentAdmin)
 adminRouter.delete('/delete-appointment', authAdmin, deleteAppointment)
 adminRouter.get('/dashboard-stats', authAdmin, getDashboardStats)
+adminRouter.delete('/doctors/:id',authAdmin,deleteDoctor)
 
 export default adminRouter 

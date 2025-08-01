@@ -392,6 +392,27 @@ const getAllAppointments = async (req, res) => {
     }
 };
 
+
+const deleteDoctor = async (req, res) => {
+  try {
+    const doctorId = req.params.id;
+    if (!doctorId) {
+      return res.status(400).json({ success: false, message: "Doctor ID required" });
+    }
+
+    const deleted = await doctorModel.findByIdAndDelete(doctorId);
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
+    }
+
+    return res.status(200).json({ success: true, message: "Doctor deleted successfully" });
+  } catch (error) {
+    console.error('Error deleting doctor:', error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 export { 
     addDoctor,
     loginAdmin,
@@ -400,5 +421,6 @@ export {
     cancelAppointmentAdmin,
     deleteAppointment,
     getDashboardStats,
-    getAllAppointments
+    getAllAppointments,
+    deleteDoctor
 };

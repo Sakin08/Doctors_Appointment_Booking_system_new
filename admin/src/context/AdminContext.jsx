@@ -155,6 +155,35 @@ const AdminContextProvider = (props) => {
         }
     };
 
+const deleteDoctor = async (doctorId) => {
+  try {
+    const response = await fetch(`${backendUrl}/api/admin/doctors/${doctorId}`, { 
+      method: 'DELETE',
+      headers: {
+        aToken,  // your backend expects 'aToken' header based on your other requests
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    if (data.success) {
+      await getAllDoctors();
+      return true;
+    } else {
+      throw new Error(data.message || 'Failed to delete doctor');
+    }
+  } catch (error) {
+    console.error("Delete doctor error:", error);
+    return false;
+  }
+};
+
+
     // Initial data load
     useEffect(() => {
         if (aToken) {
@@ -177,7 +206,8 @@ const AdminContextProvider = (props) => {
         deleteAppointment,
         loading,
         dashboardStats,
-        getDashboardStats
+        getDashboardStats,
+        deleteDoctor
     };
 
     return (
